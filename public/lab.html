@@ -6,8 +6,8 @@
 <div class="route-heading"><h2>길찾기</h2><span>DIRECTIONS</span><button id="close-route" type="button" aria-label="길찾기 닫기">×</button></div>
 <form id="route-form">
 <div class="route-endpoints"><div class="endpoint-fields">
-<div class="endpoint-row"><label for="origin-address" class="endpoint-tag">출발</label><input id="origin-address" maxlength="400" placeholder="출발지 주소" autocomplete="off"><button id="search-origin" type="button" aria-label="출발지 검색" class="address-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg></button></div>
-<div class="endpoint-row"><label for="destination-address" class="endpoint-tag">도착</label><input id="destination-address" maxlength="400" placeholder="도착지 주소" autocomplete="off"><button id="search-destination" type="button" aria-label="도착지 검색" class="address-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg></button></div>
+<div class="endpoint-row"><label for="origin-address" class="endpoint-tag">출발</label><input id="origin-address" maxlength="400" placeholder="출발지 주소" autocomplete="off"></div>
+<div class="endpoint-row"><label for="destination-address" class="endpoint-tag">도착</label><input id="destination-address" maxlength="400" placeholder="도착지 주소" autocomplete="off"></div>
 </div><button id="swap-route" type="button" aria-label="출발지와 도착지 바꾸기" title="출발·도착 바꾸기" class="swap-route">⇅</button></div>
 <div class="route-tools"><button id="my-location" type="button" class="text-button">현재 위치 사용</button><details class="curated-destinations"><summary>아지오 공간 선택</summary><label>공간<select id="route-place"></select></label></details></div>
 <p id="location-status" role="status" class="muted">현재 위치를 사용하거나 주소를 검색해주세요.</p>
@@ -18,7 +18,7 @@
 <button type="button" data-mode="drive" aria-label="자동차" title="자동차" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 10 2-6h12l2 6v9H4zM4 10h16M7 14h2m6 0h2M6 19v2m12-2v2"/></svg></button>
 <button type="button" data-mode="walk" aria-label="도보" title="도보" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="14" cy="4" r="2"/><path d="m10 22 3-7-3-4 2-4 3 4 4 2M5 13l4-2 3-4M13 15l4 7"/></svg></button>
 </div><input id="route-mode" type="hidden" value="transit">
-<button type="submit" class="route-submit">경로 찾기 <span aria-hidden="true">↗</span></button>
+
 </form><p id="route-status" role="status" class="muted"></p><div id="route-results"></div></section><section class="control-section"><p class="eyebrow">CONNECTION</p><div id="connection" role="status">연결 상태 확인 중</div><button id="reload" class="text-button">설정 다시 읽기 ↗</button><details><summary>카카오 연결 방법</summary><p>프로젝트의 .env.local에 JavaScript 키와 REST API 키를 입력한 뒤 서버를 다시 시작하세요.</p><p>JavaScript SDK 도메인: <code>http://127.0.0.1:4317</code></p><a href="https://developers.kakao.com/" target="_blank" rel="noreferrer">카카오 개발자센터 ↗</a></details></section>
 <section class="control-section"><p class="eyebrow">MAP APPEARANCE</p><label class="check"><input type="checkbox" id="monochrome" checked> 지도 무채색 처리</label><p class="muted">상점·건물·도로·지역 이름을 숨기고 역 이름만 남겼습니다.</p></section>
 <section class="control-section"><p class="eyebrow">PIN STUDY</p><div class="pin-demo"><div class="pin-shape"><i></i><span></span><em></em></div><div><b>원 · 선 · 위치 점</b><p class="muted">숫자 없는 컬러 핀</p></div></div><div class="row"><button id="sample-save">저장</button><button id="sample-visit">방문 등록 상태 시험</button></div><p id="state-label" role="status">미저장 · 세션 한정 테스트</p><div class="dot-row"><span id="sample-dot"></span><small>사진을 업로드하지 않고 상태 변화만 시험합니다.</small></div></section>

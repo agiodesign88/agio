@@ -49,8 +49,8 @@ function enablePhotoColor(img){
   img.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();const r=img.getBoundingClientRect();pick(r.width/2,r.height/2);}};
 }
 function renderPhotos(){const container=$('#photos');container.replaceChildren();photos.forEach((url,i)=>{const box=el('div');const picture=photoNode(url,'공간 사진 '+(i+1));if(picture.tagName==='IMG')enablePhotoColor(picture);box.append(picture);const row=el('div',null,'row');row.append(button('←',()=>{if(i>0){[photos[i-1],photos[i]]=[photos[i],photos[i-1]];renderPhotos();}}),button('→',()=>{if(i<photos.length-1){[photos[i],photos[i+1]]=[photos[i+1],photos[i]];renderPhotos();}}),button('제외',()=>{photos.splice(i,1);renderPhotos();}));box.append(row);container.append(box);});}
-$('#catalog-photos').onchange=async e=>{const files=[...e.target.files];const submit=form.querySelector('[type=submit]');submit.disabled=true;try{if(files.length+photos.length>30)throw new Error('사진은 공간당 30장까지입니다.');for(const file of files){const prepared=await readablePhoto(file,message=>$('#form-status').textContent=message);if(file.size>10*1024*1024)throw new Error('사진은 장당 10MB 이하로 선택하세요.');const image=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('사진을 읽지 못했습니다.'));reader.readAsDataURL(prepared);});const saved=await api('/api/upload','POST',{image});photos.push(saved.url);renderPhotos();}$('#form-status').textContent='사진을 추가했습니다. 공간 저장을 눌러 반영하세요.';}catch(err){$('#form-status').textContent=err.message;}finally{submit.disabled=false;e.target.value='';}};
-form.onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(form));data.images=photos;const id=data.id;delete data.id;const submit=form.querySelector('[type=submit]');submit.disabled=true;try{const saved=await api(id?'/api/places/'+encodeURIComponent(id):'/api/places',id?'PUT':'POST',data);places=await api('/api/places');renderLists();editPlace(saved);$('#form-status').textContent='이 컴퓨터에 저장했습니다.';}catch(err){$('#form-status').textContent=err.message;}finally{submit.disabled=false;}};
+$('#catalog-photos').onchange=async e=>{const files=[...e.target.files];const submit=form.querySelector('[type=submit]');try{if(files.length+photos.length>30)throw new Error('사진은 공간당 30장까지입니다.');for(const file of files){const prepared=await readablePhoto(file,message=>$('#form-status').textContent=message);if(file.size>10*1024*1024)throw new Error('사진은 장당 10MB 이하로 선택하세요.');const image=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('사진을 읽지 못했습니다.'));reader.readAsDataURL(prepared);});const saved=await api('/api/upload','POST',{image});photos.push(saved.url);renderPhotos();}$('#form-status').textContent='사진을 추가했습니다. 공간 저장을 눌러 반영하세요.';}catch(err){$('#form-status').textContent=err.message;}finally{e.target.value='';}};
+form.onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(form));data.images=photos;const id=data.id;delete data.id;const submit=form.querySelector('[type=submit]');try{const saved=await api(id?'/api/places/'+encodeURIComponent(id):'/api/places',id?'PUT':'POST',data);places=await api('/api/places');renderLists();editPlace(saved);$('#form-status').textContent='이 컴퓨터에 저장했습니다.';}catch(err){$('#form-status').textContent=err.message;}finally{}};
 $('#geocode').onclick=async()=>{const b=$('#geocode');b.disabled=true;try{const found=await api('/api/geocode','POST',{address:form.elements.address.value});$('#geocode-results').replaceChildren();if(!found.length)throw new Error('주소를 찾지 못했습니다. 도로명과 건물 번호를 확인하세요.');for(const p of found)$('#geocode-results').append(button(p.address,()=>{form.elements.lat.value=p.lat;form.elements.lng.value=p.lng;$('#geocode-results').replaceChildren();$('#form-status').textContent='좌표를 선택했습니다. 공간 저장을 눌러 반영하세요.';}));}catch(e){$('#form-status').textContent=e.message;}finally{b.disabled=false;}};
 function sampleState(action){sample=transition(sample,action);$('#sample-save').textContent=sample.saved?'저장 해제':'저장';$('#sample-dot').style.background=sample.visited?'#69786c':sample.saved?'#333':'#ddd';$('#state-label').textContent=(sample.visited?'방문 등록 · 유채색':sample.saved?'저장 · 무채색':'미저장 · 기본 상태')+' / 세션 한정';}
 $('#sample-save').onclick=()=>sampleState('toggle-save');$('#sample-visit').onclick=()=>sampleState('visit');
@@ -207,8 +207,8 @@ async function initMap(){
 let locationPending=null;
 function fillCurrentLocation(){
   if(locationPending)return locationPending;
-  const button=$('#my-location'),submit=$('#route-form button[type=submit]'),status=$('#location-status');
-  const locationVersion=++originSearchVersion;$('#origin-address').disabled=false;$('#search-origin').disabled=false;$('#origin-results').replaceChildren();button.disabled=true;submit.disabled=true;button.textContent='현재 위치 확인 중…';
+  const button=$('#my-location'),status=$('#location-status');
+  const locationVersion=++originSearchVersion;$('#origin-address').disabled=false;$('#origin-results').replaceChildren();button.disabled=true;button.textContent='현재 위치 확인 중…';
   $('#origin-address').value='';$('#origin-address').placeholder='주소 확인 중…';
   status.textContent='출발지 확인 중 · 위치 권한을 요청하면 허용해주세요.';
   $('#start-lat').value='';$('#start-lng').value='';clearLines();$('#route-results').replaceChildren();$('#route-status').textContent='';
@@ -228,9 +228,9 @@ function fillCurrentLocation(){
       $('#origin-address').placeholder='출발지 주소';
       $('#route-status').textContent='주소를 불러오지 못했습니다. 출발지 주소를 직접 입력해주세요.';
     });
-    return true;
+    scheduleRoute();return true;
   }).catch(error=>{if(locationVersion!==originSearchVersion)return false;$('#origin-address').value='';$('#origin-address').placeholder='출발지 주소';status.textContent=error.message;$('#route-status').textContent=error.message;return false;})
-  .finally(()=>{$('#origin-address').disabled=false;$('#search-origin').disabled=false;button.disabled=false;submit.disabled=false;button.textContent='현재 위치 다시 확인';locationPending=null;});
+  .finally(()=>{$('#origin-address').disabled=false;button.disabled=false;button.textContent='현재 위치 다시 확인';locationPending=null;});
   return locationPending;
 }
 $('#my-location').onclick=fillCurrentLocation;
@@ -250,7 +250,7 @@ $('#map-my-location').onclick=async()=>{
   finally{control.disabled=false;control.removeAttribute('aria-busy');control.setAttribute('aria-label','내 위치로 이동');}
 };
 
-$('#route-place').onchange=()=>{destinationSearchVersion++;$('#destination-results').replaceChildren();updateDestinationAddress();clearLines();$('#route-results').replaceChildren();if(!$('#origin-address').value)fillCurrentLocation();};
+$('#route-place').onchange=()=>{destinationSearchVersion++;$('#destination-results').replaceChildren();updateDestinationAddress();clearLines();$('#route-results').replaceChildren();if(!$('#origin-address').value)fillCurrentLocation();else scheduleRoute();};
 function updateDestinationAddress(){const p=places.find(p=>p.id===$('#route-place').value);$('#destination-address').value=p?.address||'';$('#end-lat').value=p?.lat??'';$('#end-lng').value=p?.lng??'';}
 let originSearchVersion=0;
 $('#origin-address').oninput=()=>{originSearchVersion++;$('#start-lat').value='';$('#start-lng').value='';$('#origin-results').replaceChildren();$('#location-status').textContent='주소 검색 후 결과를 선택해주세요.';clearLines();$('#route-results').replaceChildren();};
@@ -258,18 +258,18 @@ async function searchOrigin(){
   const address=$('#origin-address').value.trim();if(!address){$('#location-status').textContent='출발 주소를 입력해주세요.';return;}
   const version=++originSearchVersion;$('#location-status').textContent='주소 검색 중…';$('#origin-results').replaceChildren();
   try{const rows=await api('/api/geocode','POST',{address});if(version!==originSearchVersion)return;
-    $('#location-status').textContent=rows.length?'출발할 주소를 선택해주세요.':'검색 결과가 없습니다. 도로명과 건물 번호를 입력해주세요.';
+    $('#location-status').textContent=rows.length?'출발할 주소를 선택해주세요.':'검색 결과가 없습니다. 도로명과 건물 번호를 입력해주세요.';if(!rows.length)$('#origin-results').append(el('p','검색 결과가 없습니다. 도로명과 건물 번호를 입력해주세요.','muted'));
     for(const row of rows)$('#origin-results').append(button(row.address,()=>{
       if(version!==originSearchVersion)return;
       $('#origin-address').value=row.address;$('#start-lat').value=row.lat;$('#start-lng').value=row.lng;
-      $('#origin-results').replaceChildren();$('#location-status').textContent='출발 주소가 설정됐습니다.';
+      $('#origin-results').replaceChildren();$('#location-status').textContent='출발 주소가 설정됐습니다.';invalidateRoute();
     },'place-item'));
-  }catch(error){if(version===originSearchVersion)$('#location-status').textContent=error.message;}
+  }catch(error){if(version===originSearchVersion){$('#location-status').textContent=error.message;$('#origin-results').replaceChildren(el('p',error.message,'muted'));}}
 }
-$('#search-origin').onclick=searchOrigin;
-$('#origin-address').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchOrigin();}};
+
+$('#origin-address').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();searchOrigin();}};
 let routeVersion=0;
-function clearLines(){routeEndpoints=[];drawPins();routeVersion++;if(map?.getLayer('agio-route'))map.removeLayer('agio-route');if(map?.getSource('agio-route'))map.removeSource('agio-route');}
+function clearLines(){clearTimeout(autoRouteTimer);routeEndpoints=[];drawPins();routeVersion++;if(map?.getLayer('agio-route'))map.removeLayer('agio-route');if(map?.getSource('agio-route'))map.removeSource('agio-route');}
 function routeCardContent(route){
   const prop=route.properties||route.summary||{},legs=routeLegs(route);
   const seconds=prop.totalTime??prop.duration,distance=prop.totalDistance??prop.distance;
@@ -342,9 +342,15 @@ function showRoute(route,mode,{details=true}={}){
   map.addLayer({id:'agio-route',type:'line',source:'agio-route',layout:{'line-join':'round','line-cap':'round'},paint:{'line-color':'#111','line-width':4,'line-opacity':.8}});
   fitRouteView(valid.flat());
 }
-$('#route-form').onsubmit=async e=>{e.preventDefault();if(locationPending&&(!$('#start-lat').value||!$('#start-lng').value))await locationPending;if(!$('#start-lat').value||!$('#start-lng').value){if($('#origin-address').value.trim()){await searchOrigin();return;}if(!await fillCurrentLocation())return;}if(!$('#end-lat').value||!$('#end-lng').value){await searchDestination();return;}const target={lat:Number($('#end-lat').value),lng:Number($('#end-lng').value)};const mode=$('#route-mode').value,b=$('#route-form button[type=submit]');b.disabled=true;$('#route-results').replaceChildren();clearLines();$('#route-status').textContent='카카오에서 실제 경로를 조회하는 중…';const requestVersion=routeVersion;try{const result=await api('/api/routes','POST',{mode,startLat:Number($('#start-lat').value),startLng:Number($('#start-lng').value),endLat:target.lat,endLng:target.lng});if(requestVersion!==routeVersion||$('.route-planner').hidden)return;const routes=routesFromResponse(result);if(!routes.length)throw new Error('이 구간의 경로가 없습니다. 출발지와 목적지를 확인하세요.');$('#route-status').textContent='';routes.forEach((route,i)=>{const prop=route.properties||route.summary||{};const seconds=prop.totalTime??prop.duration;const distance=prop.totalDistance??prop.distance;const label=`경로 ${i+1}${seconds!=null?' · '+Math.ceil(seconds/60)+'분':''}${distance!=null?' · '+(distance/1000).toFixed(1)+'km':''}`;const btn=button(null,()=>{document.querySelectorAll('.route-option').forEach(n=>n.setAttribute('aria-pressed','false'));const expanded=btn.getAttribute('aria-expanded')==='true';document.querySelectorAll('.route-option').forEach(n=>n.setAttribute('aria-expanded','false'));btn.setAttribute('aria-pressed','true');btn.setAttribute('aria-expanded',String(!expanded));document.querySelector('#route-details')?.remove();showRoute(route,mode,{details:!expanded});},'route-option');btn.setAttribute('aria-pressed','false');btn.setAttribute('aria-label',label+' 상세 경로');btn.setAttribute('aria-expanded','false');btn.append(...routeCardContent(route));$('#route-results').append(btn);});const first=$('#route-results .route-option');first?.setAttribute('aria-pressed','true');showRoute(routes[0],mode,{details:false});}catch(e){$('#route-status').textContent=e.message;}finally{b.disabled=false;}};
+$('#route-form').onsubmit=async e=>{e.preventDefault();if(locationPending&&(!$('#start-lat').value||!$('#start-lng').value))await locationPending;if(!$('#start-lat').value||!$('#start-lng').value){if($('#origin-address').value.trim()){await searchOrigin();return;}if(!await fillCurrentLocation())return;}if(!$('#end-lat').value||!$('#end-lng').value){await searchDestination();return;}const target={lat:Number($('#end-lat').value),lng:Number($('#end-lng').value)};const mode=$('#route-mode').value;$('#route-results').replaceChildren();clearLines();$('#route-status').textContent='카카오에서 실제 경로를 조회하는 중…';const requestVersion=routeVersion;try{const result=await api('/api/routes','POST',{mode,startLat:Number($('#start-lat').value),startLng:Number($('#start-lng').value),endLat:target.lat,endLng:target.lng});if(requestVersion!==routeVersion||$('.route-planner').hidden)return;const routes=routesFromResponse(result);if(!routes.length)throw new Error('이 구간의 경로가 없습니다. 출발지와 목적지를 확인하세요.');$('#route-status').textContent='';routes.forEach((route,i)=>{const prop=route.properties||route.summary||{};const seconds=prop.totalTime??prop.duration;const distance=prop.totalDistance??prop.distance;const label=`경로 ${i+1}${seconds!=null?' · '+Math.ceil(seconds/60)+'분':''}${distance!=null?' · '+(distance/1000).toFixed(1)+'km':''}`;const btn=button(null,()=>{document.querySelectorAll('.route-option').forEach(n=>n.setAttribute('aria-pressed','false'));const expanded=btn.getAttribute('aria-expanded')==='true';document.querySelectorAll('.route-option').forEach(n=>n.setAttribute('aria-expanded','false'));btn.setAttribute('aria-pressed','true');btn.setAttribute('aria-expanded',String(!expanded));document.querySelector('#route-details')?.remove();showRoute(route,mode,{details:!expanded});},'route-option');btn.setAttribute('aria-pressed','false');btn.setAttribute('aria-label',label+' 상세 경로');btn.setAttribute('aria-expanded','false');btn.append(...routeCardContent(route));$('#route-results').append(btn);});const first=$('#route-results .route-option');first?.setAttribute('aria-pressed','true');showRoute(routes[0],mode,{details:false});}catch(e){if(requestVersion===routeVersion)$('#route-status').textContent=e.message;}};
 let destinationSearchVersion=0;
-function invalidateRoute(){clearLines();$('#route-results').replaceChildren();$('#route-status').textContent='';}
+let autoRouteTimer;
+function scheduleRoute(){
+  clearTimeout(autoRouteTimer);
+  if($('.route-planner').hidden||!['start-lat','start-lng','end-lat','end-lng'].every(id=>$('#'+id).value!==''))return;
+  autoRouteTimer=setTimeout(()=>{if(!$('.route-planner').hidden)$('#route-form').requestSubmit();},150);
+}
+function invalidateRoute(){clearLines();$('#route-results').replaceChildren();$('#route-status').textContent='';scheduleRoute();}
 $('#destination-address').oninput=()=>{destinationSearchVersion++;$('#end-lat').value='';$('#end-lng').value='';$('#route-place').value='';$('#destination-results').replaceChildren();invalidateRoute();};
 async function searchDestination(){
   const address=$('#destination-address').value.trim();if(!address)return notify('도착지 주소를 입력해주세요.');
@@ -354,8 +360,8 @@ async function searchDestination(){
     for(const row of rows)$('#destination-results').append(button(row.address,()=>{if(version!==destinationSearchVersion)return;$('#destination-address').value=row.address;$('#end-lat').value=row.lat;$('#end-lng').value=row.lng;$('#destination-results').replaceChildren();invalidateRoute();},'place-item'));
   }catch(e){if(version===destinationSearchVersion)$('#route-status').textContent=e.message;}
 }
-$('#search-destination').onclick=searchDestination;
-$('#destination-address').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchDestination();}};
+
+$('#destination-address').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();searchDestination();}};
 $('#swap-route').onclick=()=>{
   if(locationPending)return notify('현재 위치 확인이 끝난 뒤 바꿔주세요.');
   originSearchVersion++;destinationSearchVersion++;
@@ -363,6 +369,14 @@ $('#swap-route').onclick=()=>{
   $('#route-place').value='';$('#origin-results').replaceChildren();$('#destination-results').replaceChildren();$('#location-status').textContent='출발지와 도착지를 바꿨습니다.';invalidateRoute();
 };
 document.querySelectorAll('[data-mode]').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('[data-mode]').forEach(n=>n.setAttribute('aria-pressed',n===btn));$('#route-mode').value=btn.dataset.mode;invalidateRoute();});
+for(const [id,search] of [['origin-address',searchOrigin],['destination-address',searchDestination]]){
+  const input=$('#'+id);let timer,composing=false;
+  const queue=()=>{clearTimeout(timer);if(!composing&&input.value.trim().length>=2)timer=setTimeout(()=>{const latitude=$('#'+(id==='origin-address'?'start-lat':'end-lat')).value;if(!$('.route-planner').hidden&&!latitude)search();},500);};
+  input.addEventListener('input',queue);
+  input.addEventListener('compositionstart',()=>{composing=true;clearTimeout(timer);});
+  input.addEventListener('compositionend',()=>{composing=false;queue();});
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')clearTimeout(timer);});
+}
 $('#reload').onclick=()=>location.reload();
 async function boot(){try{config=await api('/api/config');if(config.readOnly&&location.pathname.endsWith('/lab.html')){document.body.replaceChildren(el('p','공간 관리는 로컬 앱에서 이용해주세요. 이 배포는 조회 전용입니다.'));return;}places=await api('/api/places');$('#connection').textContent=`JavaScript 키: ${config.jsKey?'설정됨':'미설정'} / REST 키: ${config.restReady?'설정됨':'미설정'}`;renderLists();editPlace(null);window.dispatchEvent(new CustomEvent("agio-catalog",{detail:places}));await initMap();}catch(e){$('#connection').textContent=e.message;}}
 export const ready=boot();
