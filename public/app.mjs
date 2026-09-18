@@ -84,6 +84,13 @@ function fitInitialMap(){
     const visible=candidates.slice(0,n);
     const bounds=new maplibregl.LngLatBounds();bounds.extend(anchor);visible.forEach(p=>bounds.extend([p.lng,p.lat]));
     map.fitBounds(bounds,{padding:{top:110,bottom:65,left:45,right:55},maxZoom:15,duration:0});
+    if(liveLocation){
+      map.jumpTo({center:anchor,padding:0});
+      const rect=map.getContainer().getBoundingClientRect();
+      const halfWidth=Math.max(20,rect.width/2-55),halfHeight=Math.max(20,rect.height/2-110);
+      const scale=Math.max(1,...visible.map(p=>{const point=map.project([p.lng,p.lat]);return Math.max(Math.abs(point.x-rect.width/2)/halfWidth,Math.abs(point.y-rect.height/2)/halfHeight);}));
+      map.jumpTo({center:anchor,zoom:map.getZoom()-Math.log2(scale),padding:0});
+    }
     const points=visible.map(p=>{const point=map.project([p.lng,p.lat]);return {x:point.x,y:point.y};});
     if(cluster(points,32).length>=count)break;
   }
