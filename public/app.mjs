@@ -69,10 +69,31 @@ new ResizeObserver(positionPanel).observe($('#panel'));
 let pinEndpoint=null;
 let routeEndpoints=[];
 let liveLocation=null,locationWatch=null,lastLocation=null;
-function rememberLocation(coords){lastLocation={latitude:coords.latitude,longitude:coords.longitude,accuracy:coords.accuracy,receivedAt:Date.now()};liveLocation=[coords.longitude,coords.latitude];drawPins();}
+let initialMapFitted=false,initialFallbackShown=false,locationUnavailable=false;
+function fitInitialMap(){
+  if(!map||initialMapFitted||!map.loaded()||!map.getContainer().getBoundingClientRect().height)return;
+  if(!liveLocation&&initialFallbackShown)return;
+  const candidates=places.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng)&&p.status!=='closed');
+  if(!candidates.length)return;
+  const anchor=liveLocation||[candidates[0].lng,candidates[0].lat];
+  const distance=p=>{const lat=p.lat*Math.PI/180,base=anchor[1]*Math.PI/180;return Math.sin((lat-base)/2)**2+Math.cos(lat)*Math.cos(base)*Math.sin((p.lng-anchor[0])*Math.PI/360)**2;};
+  candidates.sort((a,b)=>distance(a)-distance(b));
+  initialMapFitted=!!liveLocation||locationUnavailable;initialFallbackShown=true;
+  const count=Math.min(5,candidates.length);
+  for(let n=count;n<=candidates.length;n++){
+    const visible=candidates.slice(0,n);
+    const bounds=new maplibregl.LngLatBounds();bounds.extend(anchor);visible.forEach(p=>bounds.extend([p.lng,p.lat]));
+    map.fitBounds(bounds,{padding:{top:110,bottom:65,left:45,right:55},maxZoom:15,duration:0});
+    const points=visible.map(p=>{const point=map.project([p.lng,p.lat]);return {x:point.x,y:point.y};});
+    if(cluster(points,32).length>=count)break;
+  }
+  drawPins();
+}
+function rememberLocation(coords){lastLocation={latitude:coords.latitude,longitude:coords.longitude,accuracy:coords.accuracy,receivedAt:Date.now()};liveLocation=[coords.longitude,coords.latitude];fitInitialMap();drawPins();}
 function watchLocation(){
  if(locationWatch!==null||!navigator.geolocation)return;
  locationWatch=navigator.geolocation.watchPosition(p=>rememberLocation(p.coords),error=>{
+  locationUnavailable=true;fitInitialMap();
   if(error.code===1){liveLocation=null;lastLocation=null;drawPins();}
  },{enableHighAccuracy:true,maximumAge:15000,timeout:20000});
 }
@@ -162,9 +183,10 @@ async function initMap(){
     });
     $('#map-message').hidden=true;
     $('#connection').textContent='OpenFreeMap 지도 연결됨 · 역 이름만 표시';
-    map.on('move',drawPins);map.on('zoom',drawPins);map.on('click',closePanel);
-    new ResizeObserver(()=>{map.resize();drawPins();}).observe($('.map-stage'));
-    drawPins();watchLocation();
+    map.on('idle',fitInitialMap);map.on('move',drawPins);map.on('zoom',drawPins);map.on('click',closePanel);
+    map.on('movestart',event=>{if(event.originalEvent)initialMapFitted=true;});
+    new ResizeObserver(()=>{map.resize();fitInitialMap();drawPins();}).observe($('.map-stage'));
+    fitInitialMap();drawPins();watchLocation();
   }catch(e){$('#map-message').replaceChildren(el('b','지도 연결 확인 필요'),el('p',e.message));$('#connection').textContent=e.message;}
 }
 let locationPending=null;
@@ -295,5 +317,5 @@ $('#reload').onclick=()=>location.reload();
 async function boot(){try{config=await api('/api/config');if(config.readOnly&&location.pathname.endsWith('/lab.html')){document.body.replaceChildren(el('p','공간 관리는 로컬 앱에서 이용해주세요. 이 배포는 조회 전용입니다.'));return;}places=await api('/api/places');$('#connection').textContent=`JavaScript 키: ${config.jsKey?'설정됨':'미설정'} / REST 키: ${config.restReady?'설정됨':'미설정'}`;renderLists();editPlace(null);window.dispatchEvent(new CustomEvent("agio-catalog",{detail:places}));await initMap();}catch(e){$('#connection').textContent=e.message;}}
 export const ready=boot();
 export {beginRoute,selectPlace};
-export function refreshMap(){map?.resize();drawPins();}
+export function refreshMap(){map?.resize();fitInitialMap();drawPins();}
 
