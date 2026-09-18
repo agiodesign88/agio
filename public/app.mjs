@@ -201,6 +201,7 @@ function fillCurrentLocation(){
   if(locationPending)return locationPending;
   const button=$('#my-location'),submit=$('#route-form button[type=submit]'),status=$('#location-status');
   const locationVersion=++originSearchVersion;$('#origin-address').disabled=false;$('#search-origin').disabled=false;$('#origin-results').replaceChildren();button.disabled=true;submit.disabled=true;button.textContent='현재 위치 확인 중…';
+  $('#origin-address').value='현재 위치';
   status.textContent='출발지 확인 중 · 위치 권한을 요청하면 허용해주세요.';
   $('#start-lat').value='';$('#start-lng').value='';clearLines();$('#route-results').replaceChildren();$('#route-status').textContent='';
   const position=lastLocation&&Date.now()-lastLocation.receivedAt<60000?Promise.resolve(lastLocation):currentPosition(navigator.geolocation);
@@ -210,12 +211,8 @@ function fillCurrentLocation(){
     $('#start-lat').value=p.latitude;$('#start-lng').value=p.longitude;
     status.textContent=p.accuracy>300?'출발지: 현재 위치 · 위치 오차가 큽니다. 필요하면 다시 확인해주세요.':'출발지: 현재 위치';
     $('#origin-address').value='현재 위치';
-    api('/api/reverse-geocode','POST',{lat:p.latitude,lng:p.longitude}).then(found=>{
-      if(locationVersion!==originSearchVersion)return;
-      if(found.address)$('#origin-address').value=found.address;
-    }).catch(()=>{if(locationVersion===originSearchVersion)status.textContent='현재 위치로 길찾기를 사용할 수 있습니다.';});
     return true;
-  }).catch(error=>{if(locationVersion!==originSearchVersion)return false;$('#origin-address').value='';status.textContent=error.message;return false;})
+  }).catch(error=>{if(locationVersion!==originSearchVersion)return false;$('#origin-address').value='';status.textContent=error.message;$('#route-status').textContent=error.message;return false;})
   .finally(()=>{$('#origin-address').disabled=false;$('#search-origin').disabled=false;button.disabled=false;submit.disabled=false;button.textContent='현재 위치 다시 확인';locationPending=null;});
   return locationPending;
 }
