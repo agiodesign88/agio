@@ -29,3 +29,15 @@
 
 .route-card-stops{display:block;border-top:1px solid #e5e5e5;margin-top:12px;padding-top:10px}.route-card-leg{display:block;padding:6px 0}.route-card-leg strong{display:block;font-size:12px;font-weight:600;line-height:1.6}.route-card-leg>span,.route-card-stops>span:not(.route-card-leg){display:block;font-size:11px;line-height:1.8;color:#555}.route-card-more{display:block;margin-top:10px;font-size:10px;color:#666}
 .route-card-stops,.route-card-more{grid-column:1/-1}
+#route-results .route-option{display:block;width:100%;margin:0;padding:18px 10px;border:0;border-bottom:1px solid #e7e7e7;background:#fff;text-align:left;font-family:inherit;box-shadow:none}
+#route-results .route-option[aria-pressed=true]{background:#f3f3f3;border-color:#e7e7e7}
+.route-summary-head{display:flex;align-items:baseline;gap:5px;width:100%;margin-bottom:12px}
+#route-results .route-summary-time{font-size:20px;line-height:1.2;font-weight:600;white-space:nowrap}
+.route-summary-meta{font-size:9px;color:#888;line-height:1.6;flex:1;min-width:0}
+.route-summary-toggle{font-size:14px;color:#777;align-self:center}.route-option[aria-expanded=true] .route-summary-toggle{transform:rotate(180deg)}
+.route-summary-timeline{display:block}.route-summary-stop{display:flex;position:relative;gap:12px;min-height:40px;padding-bottom:10px}
+.route-summary-stop:not(:last-child):before{content:'';position:absolute;left:10px;top:20px;bottom:-2px;width:2px;background:#ccc}
+.route-summary-badge{position:relative;z-index:1;display:grid;place-items:center;flex:0 0 22px;height:22px;border-radius:50%;background:#555;color:white;font-size:14px;line-height:1}
+.route-summary-badge svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7}.route-summary-body{display:block;min-width:0;flex:1}
+.route-summary-station{display:block;font-size:12px;line-height:22px;color:#222}.route-summary-lines{display:block;font-size:11px;line-height:1.8;color:#444;margin-top:2px;overflow-wrap:anywhere}.route-summary-tag{display:inline-block;padding:0 3px;background:#666;color:#fff;font-size:9px;line-height:1.4}.route-summary-transfer{display:block;font-size:10px;color:#888;line-height:1.7}
+.route-summary-end{min-height:22px;padding-bottom:0;align-items:center}.route-summary-end .route-summary-badge{flex-basis:8px;width:8px;height:8px;margin:0 7px;border:2px solid #666;background:#fff}.route-summary-end .route-summary-station{font-size:12px}
