@@ -191,6 +191,22 @@ function fillCurrentLocation(){
   return locationPending;
 }
 $('#my-location').onclick=fillCurrentLocation;
+$('#map-my-location').onclick=async()=>{
+  if(!map)return notify('지도를 불러온 뒤 다시 시도해주세요.');
+  const control=$('#map-my-location');
+  control.disabled=true;control.setAttribute('aria-busy','true');
+  control.setAttribute('aria-label','내 위치 확인 중');
+  notify('현재 위치를 확인하고 있습니다.');
+  try{
+    const coords=lastLocation&&Date.now()-lastLocation.receivedAt<60000?lastLocation:await currentPosition(navigator.geolocation);
+    rememberLocation(coords);closePanel();
+    map.easeTo({center:[coords.longitude,coords.latitude],zoom:Math.max(map.getZoom(),15),duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:600});
+    watchLocation();
+    notify(coords.accuracy>300?'내 위치로 이동했습니다. 위치 오차가 클 수 있습니다.':'내 위치로 이동했습니다.');
+  }catch(error){notify(error.message);}
+  finally{control.disabled=false;control.removeAttribute('aria-busy');control.setAttribute('aria-label','내 위치로 이동');}
+};
+
 $('#route-place').onchange=()=>{destinationSearchVersion++;$('#destination-results').replaceChildren();updateDestinationAddress();clearLines();$('#route-results').replaceChildren();if(!$('#origin-address').value)fillCurrentLocation();};
 function updateDestinationAddress(){const p=places.find(p=>p.id===$('#route-place').value);$('#destination-address').value=p?.address||'';$('#end-lat').value=p?.lat??'';$('#end-lng').value=p?.lng??'';}
 let originSearchVersion=0;
