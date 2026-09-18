@@ -262,6 +262,21 @@ $('#search-origin').onclick=searchOrigin;
 $('#origin-address').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchOrigin();}};
 let routeVersion=0;
 function clearLines(){routeEndpoints=[];drawPins();routeVersion++;if(map?.getLayer('agio-route'))map.removeLayer('agio-route');if(map?.getSource('agio-route'))map.removeSource('agio-route');}
+function routeCardStops(route){
+  const summary=el('span',null,'route-card-stops');let boarded=false;
+  for(const leg of routeLegs(route)){
+    if(!['BUS','SUBWAY','TRAIN'].includes(leg.type))continue;
+    const row=el('span',null,'route-card-leg');
+    row.append(el('strong',(leg.type==='BUS'?'버스 ':'')+(leg.vehicles.join(' / ')||leg.guidance||'대중교통')));
+    if(leg.stops.length){
+      row.append(el('span',(boarded?'환승 · ':'승차 · ')+leg.stops[0]));
+      if(leg.stops.length>1)row.append(el('span','하차 · '+leg.stops.at(-1)));
+    }else row.append(el('span',leg.guidance||'승하차 정보 미제공'));
+    summary.append(row);boarded=true;
+  }
+  if(!boarded){const first=routeLegs(route).find(l=>l.guidance);if(first)summary.append(el('span',first.guidance));}
+  return summary;
+}
 function renderRouteDetails(route,mode){
   document.querySelector('#route-details')?.remove();
   const active=document.querySelector('.route-option[aria-pressed=true]');if(!active)return;
@@ -291,8 +306,8 @@ function renderRouteDetails(route,mode){
   panel.append(list);if(mode==='transit')panel.append(el('p','출발·도착지 연결 도보는 응답에 따라 상세 안내가 생략될 수 있습니다.','route-leg-note'));
   active.after(panel);
 }
-function showRoute(route,mode){
-  renderRouteDetails(route,mode);
+function showRoute(route,mode,{details=true}={}){
+  if(details)renderRouteDetails(route,mode);
   if(!map?.isStyleLoaded())return;clearLines();const paths=[];
   if(mode==='drive'){for(const sec of route.sections||[])for(const road of sec.roads||[]){const pts=[];for(let i=0;i+1<(road.vertexes||[]).length;i+=2)pts.push([road.vertexes[i],road.vertexes[i+1]]);paths.push(pts);}}
   else{for(const step of route.steps||[])if(step.path?.points)paths.push(step.path.points);if(route.path?.points)paths.push(route.path.points);}
@@ -305,7 +320,7 @@ function showRoute(route,mode){
   map.addLayer({id:'agio-route',type:'line',source:'agio-route',layout:{'line-join':'round','line-cap':'round'},paint:{'line-color':'#111','line-width':4,'line-opacity':.8}});
   fitRouteView(valid.flat());
 }
-$('#route-form').onsubmit=async e=>{e.preventDefault();if(locationPending&&(!$('#start-lat').value||!$('#start-lng').value))await locationPending;if(!$('#start-lat').value||!$('#start-lng').value){if($('#origin-address').value.trim()){await searchOrigin();return;}if(!await fillCurrentLocation())return;}if(!$('#end-lat').value||!$('#end-lng').value){await searchDestination();return;}const target={lat:Number($('#end-lat').value),lng:Number($('#end-lng').value)};const mode=$('#route-mode').value,b=$('#route-form button[type=submit]');b.disabled=true;$('#route-results').replaceChildren();clearLines();$('#route-status').textContent='카카오에서 실제 경로를 조회하는 중…';const requestVersion=routeVersion;try{const result=await api('/api/routes','POST',{mode,startLat:Number($('#start-lat').value),startLng:Number($('#start-lng').value),endLat:target.lat,endLng:target.lng});if(requestVersion!==routeVersion||$('.route-planner').hidden)return;const routes=routesFromResponse(result);if(!routes.length)throw new Error('이 구간의 경로가 없습니다. 출발지와 목적지를 확인하세요.');$('#route-status').textContent='';routes.forEach((route,i)=>{const prop=route.properties||route.summary||{};const seconds=prop.totalTime??prop.duration;const distance=prop.totalDistance??prop.distance;const label=`경로 ${i+1}${seconds!=null?' · '+Math.ceil(seconds/60)+'분':''}${distance!=null?' · '+(distance/1000).toFixed(1)+'km':''}`;const btn=button(null,()=>{document.querySelectorAll('.route-option').forEach(n=>n.setAttribute('aria-pressed','false'));btn.setAttribute('aria-pressed','true');showRoute(route,mode);},'route-option');btn.setAttribute('aria-pressed','false');btn.append(el('span','경로 '+(i+1),'route-card-label'),el('strong',seconds!=null?Math.ceil(seconds/60)+'분':'소요 시간 확인 필요'),el('span',distance!=null?(distance/1000).toFixed(1)+' km':'거리 정보 없음','route-card-distance'));if(prop.fare?.value!=null)btn.append(el('span',Number(prop.fare.value).toLocaleString('ko-KR')+'원','route-card-fare'));const overview=routeOverview(route);if(overview)btn.append(el('span',overview,'route-card-lines'));if(prop.transfers!=null)btn.append(el('span',prop.transfers?'환승 '+prop.transfers+'회':'환승 없음','route-card-label'));if(prop.fare?.value==null&&prop.fare?.min!=null)btn.append(el('span',Number(prop.fare.min).toLocaleString('ko-KR')+'~'+Number(prop.fare.max??prop.fare.min).toLocaleString('ko-KR')+'원','route-card-fare'));$('#route-results').append(btn);});}catch(e){$('#route-status').textContent=e.message;}finally{b.disabled=false;}};
+$('#route-form').onsubmit=async e=>{e.preventDefault();if(locationPending&&(!$('#start-lat').value||!$('#start-lng').value))await locationPending;if(!$('#start-lat').value||!$('#start-lng').value){if($('#origin-address').value.trim()){await searchOrigin();return;}if(!await fillCurrentLocation())return;}if(!$('#end-lat').value||!$('#end-lng').value){await searchDestination();return;}const target={lat:Number($('#end-lat').value),lng:Number($('#end-lng').value)};const mode=$('#route-mode').value,b=$('#route-form button[type=submit]');b.disabled=true;$('#route-results').replaceChildren();clearLines();$('#route-status').textContent='카카오에서 실제 경로를 조회하는 중…';const requestVersion=routeVersion;try{const result=await api('/api/routes','POST',{mode,startLat:Number($('#start-lat').value),startLng:Number($('#start-lng').value),endLat:target.lat,endLng:target.lng});if(requestVersion!==routeVersion||$('.route-planner').hidden)return;const routes=routesFromResponse(result);if(!routes.length)throw new Error('이 구간의 경로가 없습니다. 출발지와 목적지를 확인하세요.');$('#route-status').textContent='';routes.forEach((route,i)=>{const prop=route.properties||route.summary||{};const seconds=prop.totalTime??prop.duration;const distance=prop.totalDistance??prop.distance;const label=`경로 ${i+1}${seconds!=null?' · '+Math.ceil(seconds/60)+'분':''}${distance!=null?' · '+(distance/1000).toFixed(1)+'km':''}`;const btn=button(null,()=>{document.querySelectorAll('.route-option').forEach(n=>n.setAttribute('aria-pressed','false'));btn.setAttribute('aria-pressed','true');showRoute(route,mode);},'route-option');btn.setAttribute('aria-pressed','false');btn.append(el('span','경로 '+(i+1),'route-card-label'),el('strong',seconds!=null?Math.ceil(seconds/60)+'분':'소요 시간 확인 필요'),el('span',distance!=null?(distance/1000).toFixed(1)+' km':'거리 정보 없음','route-card-distance'));if(prop.fare?.value!=null)btn.append(el('span',Number(prop.fare.value).toLocaleString('ko-KR')+'원','route-card-fare'));const overview=routeOverview(route);if(overview)btn.append(el('span',overview,'route-card-lines'));if(prop.transfers!=null)btn.append(el('span',prop.transfers?'환승 '+prop.transfers+'회':'환승 없음','route-card-label'));if(prop.fare?.value==null&&prop.fare?.min!=null)btn.append(el('span',Number(prop.fare.min).toLocaleString('ko-KR')+'~'+Number(prop.fare.max??prop.fare.min).toLocaleString('ko-KR')+'원','route-card-fare'));btn.append(routeCardStops(route),el('span','상세 경로 보기 ↗','route-card-more'));$('#route-results').append(btn);});const first=$('#route-results .route-option');first?.setAttribute('aria-pressed','true');showRoute(routes[0],mode,{details:false});}catch(e){$('#route-status').textContent=e.message;}finally{b.disabled=false;}};
 let destinationSearchVersion=0;
 function invalidateRoute(){clearLines();$('#route-results').replaceChildren();$('#route-status').textContent='';}
 $('#destination-address').oninput=()=>{destinationSearchVersion++;$('#end-lat').value='';$('#end-lng').value='';$('#route-place').value='';$('#destination-results').replaceChildren();invalidateRoute();};

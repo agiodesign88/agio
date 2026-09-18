@@ -26,3 +26,6 @@
 .current-location-dot{position:absolute;width:10px;height:10px;background:#2878d0;border:0;border-radius:50%;box-shadow:none;transform:translate(-50%,-50%);pointer-events:none;z-index:3}
 
 .endpoint-row input{font-weight:400;color:#333}.endpoint-row input::placeholder{color:#777;opacity:1}
+
+.route-card-stops{display:block;border-top:1px solid #e5e5e5;margin-top:12px;padding-top:10px}.route-card-leg{display:block;padding:6px 0}.route-card-leg strong{display:block;font-size:12px;font-weight:600;line-height:1.6}.route-card-leg>span,.route-card-stops>span:not(.route-card-leg){display:block;font-size:11px;line-height:1.8;color:#555}.route-card-more{display:block;margin-top:10px;font-size:10px;color:#666}
+.route-card-stops,.route-card-more{grid-column:1/-1}
