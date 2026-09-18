@@ -201,7 +201,7 @@ function fillCurrentLocation(){
   if(locationPending)return locationPending;
   const button=$('#my-location'),submit=$('#route-form button[type=submit]'),status=$('#location-status');
   const locationVersion=++originSearchVersion;$('#origin-address').disabled=false;$('#search-origin').disabled=false;$('#origin-results').replaceChildren();button.disabled=true;submit.disabled=true;button.textContent='현재 위치 확인 중…';
-  $('#origin-address').value='현재 위치 확인 중…';
+  $('#origin-address').value='';$('#origin-address').placeholder='주소 확인 중…';
   status.textContent='출발지 확인 중 · 위치 권한을 요청하면 허용해주세요.';
   $('#start-lat').value='';$('#start-lng').value='';clearLines();$('#route-results').replaceChildren();$('#route-status').textContent='';
   const position=lastLocation&&Date.now()-lastLocation.receivedAt<60000?Promise.resolve(lastLocation):currentPosition(navigator.geolocation);
@@ -210,14 +210,18 @@ function fillCurrentLocation(){
     if(locationVersion!==originSearchVersion)return false;
     $('#start-lat').value=p.latitude;$('#start-lng').value=p.longitude;
     status.textContent=p.accuracy>300?'출발지: 현재 위치 · 위치 오차가 큽니다. 필요하면 다시 확인해주세요.':'출발지: 현재 위치';
-    const coordinateLabel='현재 위치 · '+p.latitude.toFixed(5)+', '+p.longitude.toFixed(5);
-    $('#origin-address').value=coordinateLabel;
     api('/api/reverse-geocode','POST',{lat:p.latitude,lng:p.longitude}).then(found=>{
       if(locationVersion!==originSearchVersion)return;
-      if(found.address)$('#origin-address').value='현재 위치 · '+found.address;
-    }).catch(()=>{if(locationVersion===originSearchVersion)status.textContent='주소를 불러오지 못해 현재 위치 좌표를 표시합니다. 경로 찾기는 가능합니다.';});
+      if(!found.address?.trim())throw new Error('주소 없음');
+      $('#origin-address').value=found.address;
+      $('#origin-address').placeholder='출발지 주소';
+    }).catch(()=>{
+      if(locationVersion!==originSearchVersion)return;
+      $('#origin-address').placeholder='출발지 주소';
+      $('#route-status').textContent='주소를 불러오지 못했습니다. 출발지 주소를 직접 입력해주세요.';
+    });
     return true;
-  }).catch(error=>{if(locationVersion!==originSearchVersion)return false;$('#origin-address').value='';status.textContent=error.message;$('#route-status').textContent=error.message;return false;})
+  }).catch(error=>{if(locationVersion!==originSearchVersion)return false;$('#origin-address').value='';$('#origin-address').placeholder='출발지 주소';status.textContent=error.message;$('#route-status').textContent=error.message;return false;})
   .finally(()=>{$('#origin-address').disabled=false;$('#search-origin').disabled=false;button.disabled=false;submit.disabled=false;button.textContent='현재 위치 다시 확인';locationPending=null;});
   return locationPending;
 }
