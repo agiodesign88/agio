@@ -279,7 +279,7 @@ function routeCardContent(route){
     const row=el('span',null,'route-summary-stop'),badge=el('span',null,'route-summary-badge');
     const names=leg.vehicles.join(', ');
     if(leg.type==='BUS')badge.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="15" rx="2"/><path d="M6 10h12M8 18v3m8-3v3M8 14h1m6 0h1"/></svg>';
-    else badge.textContent=names.match(/(\d+)호선/)?.[1]||'철';
+    else {const icon=document.querySelector('[data-mode="transit"] svg');if(icon)badge.append(icon.cloneNode(true));}
     const body=el('span',null,'route-summary-body');
     body.append(el('span',leg.stops[0]||leg.guidance||'승차 장소 미제공','route-summary-station'));
     const lines=el('span',null,'route-summary-lines');lines.append(el('span',leg.type==='BUS'?'버스':'지하철','route-summary-tag'),document.createTextNode(' '+(names||'노선 정보 미제공')));body.append(lines);
