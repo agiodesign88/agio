@@ -122,7 +122,7 @@
     "lng": 127.064210853039,
     "color": "#91bf9a",
     "status": "draft",
-    "instagram": "",
+    "instagram": "@thehandsomehaus",
     "hours": "매일 10:30~20:00",
     "category": "복합문화공간",
     "order": 5,
@@ -134,7 +134,7 @@
       "/uploads/7714d89a-95ca-5912-b9ec-eeb6f51f0c2e.jpg",
       "/uploads/d2a49128-b805-57ab-aa4f-11876aa602dd.jpg"
     ],
-    "updatedAt": "2026-09-18T02:41:09.610Z",
+    "updatedAt": "2026-09-18T02:59:11.487Z",
     "id": "2579c952-1338-4754-aef5-69b969cc7c22"
   },
   {
@@ -145,7 +145,7 @@
     "color": "#212116",
     "status": "draft",
     "instagram": "@maha.hannam",
-    "hours": "",
+    "hours": "일~목 12:00~21:00 / 금·토 12:00~24:00",
     "category": "카페",
     "order": 6,
     "images": [
@@ -159,7 +159,7 @@
       "/uploads/0528673b-fe03-592d-8109-66a68f207a20.jpg",
       "/uploads/e9b28a38-65e7-5424-a3e5-985142b7f41b.jpg"
     ],
-    "updatedAt": "2026-09-18T02:41:09.640Z",
+    "updatedAt": "2026-09-18T02:59:11.521Z",
     "id": "bf61508a-7287-42cd-80f8-0ae4109f8f38"
   },
   {
@@ -170,7 +170,7 @@
     "color": "#aac94a",
     "status": "draft",
     "instagram": "@cccs.page",
-    "hours": "",
+    "hours": "11:00~익일 02:00 (층·매장별 상이). 지하 살롱 12:00~익일 02:00, 라스트오더 01:30",
     "category": "복합문화공간",
     "order": 7,
     "images": [
@@ -182,7 +182,7 @@
       "/uploads/e6637c86-5a0b-56c0-8591-bf1d62bdfdb5.jpg",
       "/uploads/9890dbb8-7acf-5642-b785-ef08dc71fd2e.jpg"
     ],
-    "updatedAt": "2026-09-18T02:41:09.670Z",
+    "updatedAt": "2026-09-18T02:59:11.562Z",
     "id": "e8a96b4d-95cd-4e91-ac9e-f1f506465de8"
   },
   {
@@ -193,7 +193,7 @@
     "color": "#881938",
     "status": "draft",
     "instagram": "@pdf_seoul",
-    "hours": "",
+    "hours": "화~목 13:00~19:00 / 금~일 12:30~19:30 (월요일 휴무)",
     "category": "서점",
     "order": 8,
     "images": [
@@ -203,7 +203,7 @@
       "/uploads/1ad93dd8-e913-5931-869b-815f3fadbbaf.jpg",
       "/uploads/ee571301-a491-5b67-9549-eb635c903885.jpg"
     ],
-    "updatedAt": "2026-09-18T02:41:09.700Z",
+    "updatedAt": "2026-09-18T02:59:11.608Z",
     "id": "06d39894-9d8a-48aa-a871-9b52f6d4c91f"
   },
   {
@@ -213,8 +213,8 @@
     "lng": 127.067841105722,
     "color": "#f6ffc6",
     "status": "draft",
-    "instagram": "",
-    "hours": "",
+    "instagram": "@lco.house",
+    "hours": "수~일 11:30~20:00 (월·화 휴무)",
     "category": "복합문화공간",
     "order": 9,
     "images": [
@@ -225,7 +225,7 @@
       "/uploads/cde6dfde-ca1f-589a-b66b-96684c015b71.jpg",
       "/uploads/ca7b5f28-4785-539e-b0f5-62ebc5e519e7.jpg"
     ],
-    "updatedAt": "2026-09-17T05:53:26.289Z",
+    "updatedAt": "2026-09-18T02:59:11.639Z",
     "id": "7946d73d-e4c0-4bfa-873f-4bfce7cf2ae1"
   },
   {
@@ -236,7 +236,7 @@
     "color": "#040033",
     "status": "draft",
     "instagram": "@mongtan_aewol",
-    "hours": "",
+    "hours": "매일 12:00~21:30 (라스트오더 20:30)",
     "category": "음식점·한식",
     "order": 10,
     "images": [
@@ -248,7 +248,7 @@
       "/uploads/d167df26-b81f-5ac8-9e61-cf09d329ea52.jpg",
       "/uploads/df95d60d-0baa-5e5d-a55e-d55f90a4a7e5.jpg"
     ],
-    "updatedAt": "2026-09-18T02:41:09.717Z",
+    "updatedAt": "2026-09-18T02:59:11.685Z",
     "id": "9bbc7791-d7c5-4c5a-90f7-30126c0b6bbd"
   }
 ]
