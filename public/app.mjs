@@ -114,12 +114,18 @@ function watchLocation(){
 }
 window.addEventListener('pagehide',()=>{locationTrackingHealthy=false;if(locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null;}});
 window.addEventListener('pageshow',()=>{if(map)watchLocation();});
-function setPinEndpoint(value){pinEndpoint=value;for(const [id,key] of [['origin-address','origin'],['destination-address','destination']])$('#'+id).closest('.endpoint-row').classList.toggle('pin-target',value===key);}
+function setPinEndpoint(value){pinEndpoint=value;for(const [id,key] of [['origin-address','origin'],['destination-address','destination']])$('#'+id).closest('.endpoint-row').classList.toggle('pin-target',value===key);drawPins();}
 for(const [id,key] of [['origin-address','origin'],['destination-address','destination']]){
  const input=$('#'+id);
  input.addEventListener('focus',()=>{if(!$('.route-planner').hidden)setPinEndpoint(key);input.select();});
- input.addEventListener('click',()=>input.select());
+ input.addEventListener('click',()=>{if(!$('.route-planner').hidden)setPinEndpoint(key);input.select();});
 }
+// Keep endpoint selection active while clicking a map pin or a search result.
+function leaveEndpointSelection(event){
+ if(pinEndpoint&&!event.target.closest('#origin-address,#destination-address,#markers,#origin-results,#destination-results,#route-results .place-item'))setPinEndpoint(null);
+}
+document.addEventListener('pointerdown',leaveEndpointSelection);
+document.addEventListener('focusin',leaveEndpointSelection);
 function applyPinAddress(p){
  if(!pinEndpoint||$('.route-planner').hidden)return false;
  if(p.lat==null)return false;
@@ -181,7 +187,7 @@ function beginRoute(p){
 }
 $('#close-route').onclick=()=>{setPinEndpoint(null);$('.route-planner').hidden=true;clearLines();$('#route-results').replaceChildren();$('#route-status').textContent='';$('.phone').scrollIntoView({behavior:'smooth',block:'start'});};
 function isRoutePlace(place){
- if($('.route-planner').hidden)return true;
+ if($('.route-planner').hidden||pinEndpoint)return true;
  return ['start','end'].some(prefix=>{
   const lat=$('#'+prefix+'-lat').value,lng=$('#'+prefix+'-lng').value;
   return lat!==''&&lng!==''&&Math.abs(Number(lat)-Number(place.lat))<0.00001&&Math.abs(Number(lng)-Number(place.lng))<0.00001;
@@ -275,7 +281,7 @@ async function searchOrigin(){
     for(const row of rows)$('#origin-results').append(endpointResult(row,()=>{
       if(version!==originSearchVersion)return;
       $('#origin-address').value=row.name||row.address;$('#start-lat').value=row.lat;$('#start-lng').value=row.lng;
-      $('#origin-results').replaceChildren();$('#location-status').textContent='출발 주소가 설정됐습니다.';invalidateRoute();
+      $('#origin-results').replaceChildren();$('#location-status').textContent='출발 주소가 설정됐습니다.';setPinEndpoint(null);invalidateRoute();
     },'place-item'));
   }catch(error){if(version===originSearchVersion){$('#location-status').textContent=error.message;$('#origin-results').replaceChildren(el('p',error.message,'muted'));}}
 }
@@ -370,7 +376,7 @@ async function searchDestination(){
   const version=++destinationSearchVersion;$('#destination-results').replaceChildren();$('#route-status').textContent='도착지 검색 중…';
   try{const rows=await api('/api/geocode','POST',{address});if(version!==destinationSearchVersion)return;
     $('#route-status').textContent=rows.length?'도착할 주소를 선택해주세요.':'검색 결과가 없습니다. 주소 또는 장소 이름을 확인해주세요.';
-    for(const row of rows)$('#destination-results').append(endpointResult(row,()=>{if(version!==destinationSearchVersion)return;$('#destination-address').value=row.name||row.address;$('#end-lat').value=row.lat;$('#end-lng').value=row.lng;$('#destination-results').replaceChildren();invalidateRoute();},'place-item'));
+    for(const row of rows)$('#destination-results').append(endpointResult(row,()=>{if(version!==destinationSearchVersion)return;$('#destination-address').value=row.name||row.address;$('#end-lat').value=row.lat;$('#end-lng').value=row.lng;$('#destination-results').replaceChildren();setPinEndpoint(null);invalidateRoute();},'place-item'));
   }catch(e){if(version===destinationSearchVersion)$('#route-status').textContent=e.message;}
 }
 
