@@ -43,3 +43,9 @@
 .route-summary-end{min-height:22px;padding-bottom:0;align-items:center}.route-summary-end .route-summary-badge{flex-basis:8px;width:8px;height:8px;margin:0 7px;border:2px solid #666;background:#fff}.route-summary-end .route-summary-station{font-size:12px}
 
 .route-summary-stop{background:inherit}.route-summary-timeline{background:inherit}.route-summary-badge{background:#fff}.route-option[aria-pressed=true] .route-summary-badge{background:#f3f3f3}.route-leg-icon{border-radius:50%}
+
+/* Place search results keep the name distinct from the street address. */
+.route-planner .endpoint-result{display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%;text-align:left;padding:13px 4px;white-space:normal}
+.endpoint-result-name{font-size:13px;font-weight:500;line-height:1.5;color:#222}
+.endpoint-result-address{font-size:11px;line-height:1.5;color:#888}
+#origin-results,#destination-results{max-height:300px;overflow-y:auto;overscroll-behavior:contain}

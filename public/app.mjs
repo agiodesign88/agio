@@ -254,12 +254,18 @@ $('#route-place').onchange=()=>{destinationSearchVersion++;$('#destination-resul
 function updateDestinationAddress(){const p=places.find(p=>p.id===$('#route-place').value);$('#destination-address').value=p?.address||'';$('#end-lat').value=p?.lat??'';$('#end-lng').value=p?.lng??'';}
 let originSearchVersion=0;
 $('#origin-address').oninput=()=>{originSearchVersion++;$('#start-lat').value='';$('#start-lng').value='';$('#origin-results').replaceChildren();$('#location-status').textContent='주소 검색 후 결과를 선택해주세요.';clearLines();$('#route-results').replaceChildren();};
+function endpointResult(row,handler){
+  const item=button(null,handler,'place-item endpoint-result');
+  item.append(el('strong',row.name||row.address,'endpoint-result-name'));
+  if(row.name&&row.address)item.append(el('span',row.address,'endpoint-result-address'));
+  return item;
+}
 async function searchOrigin(){
   const address=$('#origin-address').value.trim();if(!address){$('#location-status').textContent='출발 주소를 입력해주세요.';return;}
   const version=++originSearchVersion;$('#location-status').textContent='주소 검색 중…';$('#origin-results').replaceChildren();
   try{const rows=await api('/api/geocode','POST',{address});if(version!==originSearchVersion)return;
     $('#location-status').textContent=rows.length?'출발할 주소를 선택해주세요.':'검색 결과가 없습니다. 주소 또는 장소 이름을 확인해주세요.';if(!rows.length)$('#origin-results').append(el('p','검색 결과가 없습니다. 주소 또는 장소 이름을 확인해주세요.','muted'));
-    for(const row of rows)$('#origin-results').append(button(row.name?row.name+' · '+row.address:row.address,()=>{
+    for(const row of rows)$('#origin-results').append(endpointResult(row,()=>{
       if(version!==originSearchVersion)return;
       $('#origin-address').value=row.name||row.address;$('#start-lat').value=row.lat;$('#start-lng').value=row.lng;
       $('#origin-results').replaceChildren();$('#location-status').textContent='출발 주소가 설정됐습니다.';invalidateRoute();
@@ -357,7 +363,7 @@ async function searchDestination(){
   const version=++destinationSearchVersion;$('#destination-results').replaceChildren();$('#route-status').textContent='도착지 검색 중…';
   try{const rows=await api('/api/geocode','POST',{address});if(version!==destinationSearchVersion)return;
     $('#route-status').textContent=rows.length?'도착할 주소를 선택해주세요.':'검색 결과가 없습니다. 주소 또는 장소 이름을 확인해주세요.';
-    for(const row of rows)$('#destination-results').append(button(row.name?row.name+' · '+row.address:row.address,()=>{if(version!==destinationSearchVersion)return;$('#destination-address').value=row.name||row.address;$('#end-lat').value=row.lat;$('#end-lng').value=row.lng;$('#destination-results').replaceChildren();invalidateRoute();},'place-item'));
+    for(const row of rows)$('#destination-results').append(endpointResult(row,()=>{if(version!==destinationSearchVersion)return;$('#destination-address').value=row.name||row.address;$('#end-lat').value=row.lat;$('#end-lng').value=row.lng;$('#destination-results').replaceChildren();invalidateRoute();},'place-item'));
   }catch(e){if(version===destinationSearchVersion)$('#route-status').textContent=e.message;}
 }
 
