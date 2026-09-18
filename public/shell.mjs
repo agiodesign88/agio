@@ -1,4 +1,4 @@
-import {playIntro} from './intro.mjs';
+
 import {readablePhoto,isHeic} from './photo-input.mjs';
 import {allRecords,photoCount,photoPage,photoFile,setSaved,addVisit,deleteVisit} from './records.mjs';
 import {makeDotGrid,assignToDots} from './saved-grid.mjs';
@@ -157,7 +157,7 @@ async function openGallery(){
   await loadMore();
 }
 $('#my-photos').onclick=openGallery;
-function intro(){playIntro($('#splash'));}
+function intro(){const splash=$('#splash');splash.hidden=false;splash.classList.remove('playing');void splash.offsetWidth;splash.classList.add('playing');clearTimeout(intro.timer);intro.timer=setTimeout(()=>splash.hidden=true,matchMedia('(prefers-reduced-motion: reduce)').matches?100:2400);}
 intro();route();
 // Personal storage never holds up the official catalogue or map.
 const personalReady=(async()=>{try{records=new Map((await allRecords()).map(r=>[r.placeId,r]));storageReady=true;renderSaved();if(currentDetail)renderDetail(currentDetail);await updatePhotoCount();}catch(e){toast(e.message);}})();
