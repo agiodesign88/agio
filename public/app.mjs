@@ -2,7 +2,7 @@ import {readablePhoto} from './photo-input.mjs';
 import {routesFromResponse,routeLegs,routeOverview,simplifyRoutePaths} from './routes.mjs';
 import {samplePhoto} from './photo-color.mjs';
 import {editorialStyle} from './editorial-style.mjs';
-import {currentPosition} from './location.mjs';
+import {currentPosition,stablePosition,createAddressCache} from './location.mjs';
 import {transition,cluster} from './state.mjs';
 const $=s=>document.querySelector(s), form=$('#place-form');
 // Let the browser open its native color picker, including its own eyedropper.
@@ -68,7 +68,14 @@ function positionPanel(){
 new ResizeObserver(positionPanel).observe($('#panel'));
 let pinEndpoint=null;
 let routeEndpoints=[];
-let liveLocation=null,locationWatch=null,lastLocation=null;
+let liveLocation=null,locationWatch=null,lastLocation=null,locationTrackingHealthy=false;
+const cachedAddress=createAddressCache(p=>api('/api/reverse-geocode','POST',{lat:p.latitude,lng:p.longitude}));
+let devicePositionPending=null;
+function knownPosition(){
+  if(lastLocation&&(locationTrackingHealthy||Date.now()-lastLocation.receivedAt<60000))return Promise.resolve(lastLocation);
+  if(!devicePositionPending)devicePositionPending=currentPosition(navigator.geolocation).then(coords=>{rememberLocation(coords);return lastLocation;}).finally(()=>devicePositionPending=null);
+  return devicePositionPending;
+}
 let initialMapFitted=false,initialFallbackShown=false,locationUnavailable=false;
 function fitInitialMap(){
   if(!map||initialMapFitted||!map.loaded()||!map.getContainer().getBoundingClientRect().height)return;
@@ -96,15 +103,16 @@ function fitInitialMap(){
   }
   drawPins();
 }
-function rememberLocation(coords){lastLocation={latitude:coords.latitude,longitude:coords.longitude,accuracy:coords.accuracy,receivedAt:Date.now()};liveLocation=[coords.longitude,coords.latitude];fitInitialMap();drawPins();}
+function rememberLocation(coords){lastLocation=stablePosition(lastLocation,coords);liveLocation=[lastLocation.longitude,lastLocation.latitude];fitInitialMap();drawPins();}
 function watchLocation(){
  if(locationWatch!==null||!navigator.geolocation)return;
- locationWatch=navigator.geolocation.watchPosition(p=>rememberLocation(p.coords),error=>{
+ locationWatch=navigator.geolocation.watchPosition(p=>{locationTrackingHealthy=true;rememberLocation(p.coords);},error=>{
+  locationTrackingHealthy=false;
   locationUnavailable=true;fitInitialMap();
   if(error.code===1){liveLocation=null;lastLocation=null;drawPins();}
  },{enableHighAccuracy:true,maximumAge:15000,timeout:20000});
 }
-window.addEventListener('pagehide',()=>{if(locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null;}});
+window.addEventListener('pagehide',()=>{locationTrackingHealthy=false;if(locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null;}});
 window.addEventListener('pageshow',()=>{if(map)watchLocation();});
 function setPinEndpoint(value){pinEndpoint=value;for(const [id,key] of [['origin-address','origin'],['destination-address','destination']])$('#'+id).closest('.endpoint-row').classList.toggle('pin-target',value===key);}
 for(const [id,key] of [['origin-address','origin'],['destination-address','destination']]){
@@ -204,13 +212,13 @@ function fillCurrentLocation(){
   $('#origin-address').value='';$('#origin-address').placeholder='주소 확인 중…';
   status.textContent='출발지 확인 중 · 위치 권한을 요청하면 허용해주세요.';
   $('#start-lat').value='';$('#start-lng').value='';clearLines();$('#route-results').replaceChildren();$('#route-status').textContent='';
-  const position=lastLocation&&Date.now()-lastLocation.receivedAt<60000?Promise.resolve(lastLocation):currentPosition(navigator.geolocation);
+  const position=knownPosition();
   locationPending=position.then(p=>{
-    rememberLocation(p);
+
     if(locationVersion!==originSearchVersion)return false;
     $('#start-lat').value=p.latitude;$('#start-lng').value=p.longitude;
     status.textContent=p.accuracy>300?'출발지: 현재 위치 · 위치 오차가 큽니다. 필요하면 다시 확인해주세요.':'출발지: 현재 위치';
-    api('/api/reverse-geocode','POST',{lat:p.latitude,lng:p.longitude}).then(found=>{
+    cachedAddress(p).then(found=>{
       if(locationVersion!==originSearchVersion)return;
       if(!found.address?.trim())throw new Error('주소 없음');
       $('#origin-address').value=found.address;
@@ -233,8 +241,8 @@ $('#map-my-location').onclick=async()=>{
   control.setAttribute('aria-label','내 위치 확인 중');
   notify('현재 위치를 확인하고 있습니다.');
   try{
-    const coords=lastLocation&&Date.now()-lastLocation.receivedAt<60000?lastLocation:await currentPosition(navigator.geolocation);
-    rememberLocation(coords);closePanel();
+    const coords=await knownPosition();
+    closePanel();
     map.easeTo({center:[coords.longitude,coords.latitude],zoom:Math.max(map.getZoom(),15),duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:600});
     watchLocation();
     notify(coords.accuracy>300?'내 위치로 이동했습니다. 위치 오차가 클 수 있습니다.':'내 위치로 이동했습니다.');

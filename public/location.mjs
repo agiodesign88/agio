@@ -13,3 +13,23 @@ export function currentPosition(geolocation){
     {enableHighAccuracy:true,timeout:15000,maximumAge:30000});
   });
 }
+
+// Anchor stationary fixes so small GPS jitter does not invalidate the address.
+export function stablePosition(previous,coords,now=Date.now()){
+  const dx=(coords.longitude-(previous?.longitude??coords.longitude))*111320*Math.cos(coords.latitude*Math.PI/180);
+  const dy=(coords.latitude-(previous?.latitude??coords.latitude))*111320;
+  const improved=previous&&coords.accuracy<previous.accuracy/2;
+  if(previous&&Math.hypot(dx,dy)<30&&!improved)return {...previous,receivedAt:now};
+  return {latitude:coords.latitude,longitude:coords.longitude,accuracy:coords.accuracy,receivedAt:now};
+}
+export function createAddressCache(lookup){
+  const entries=new Map();
+  return coords=>{
+    const key=coords.latitude+','+coords.longitude;
+    if(entries.has(key))return entries.get(key);
+    const pending=Promise.resolve().then(()=>lookup(coords)).then(result=>{if(!result.address?.trim())throw new Error('주소 없음');return result;}).catch(error=>{entries.delete(key);throw error;});
+    entries.set(key,pending);
+    if(entries.size>20)entries.delete(entries.keys().next().value);
+    return pending;
+  };
+}
