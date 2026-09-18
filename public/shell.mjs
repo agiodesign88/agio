@@ -1,3 +1,4 @@
+import {playIntro} from './intro.mjs';
 import {readablePhoto,isHeic} from './photo-input.mjs';
 import {allRecords,photoCount,photoPage,photoFile,setSaved,addVisit,deleteVisit} from './records.mjs';
 import {makeDotGrid,assignToDots} from './saved-grid.mjs';
@@ -17,8 +18,20 @@ recordChannel?.addEventListener('message',()=>refreshRecords().catch(e=>toast(e.
 async function refreshRecords(){records=new Map((await allRecords()).map(r=>[r.placeId,r]));renderSaved();if(currentDetail)renderDetail(currentDetail);await updatePhotoCount();}
 function changed(){recordChannel?.postMessage('changed');}
 const stage=$('.map-stage');$('#map-mount').append(stage);$('#map-screen').append($('.route-planner'));
+const routePanel=$('.route-planner');
+const routeHandle=btn(null,()=>setRouteCollapsed(!routePanel.classList.contains('is-collapsed')),'route-sheet-handle');
+routeHandle.innerHTML='<span aria-hidden="true"></span>';
+routePanel.prepend(routeHandle);
+function setRouteCollapsed(collapsed){if(collapsed)routePanel.scrollTop=0;routePanel.classList.toggle('is-collapsed',collapsed);routeHandle.setAttribute('aria-expanded',String(!collapsed));routeHandle.setAttribute('aria-label',collapsed?'길찾기 패널 펼치기':'길찾기 패널 아래로 내리기');}
+setRouteCollapsed(false);
+let routeDrag=null,suppressRouteClick=false;
+routeHandle.addEventListener('pointerdown',e=>{if(e.button!==0)return;routeDrag={y:e.clientY,delta:0};routeHandle.setPointerCapture(e.pointerId);});
+routeHandle.addEventListener('pointermove',e=>{if(routeDrag)routeDrag.delta=e.clientY-routeDrag.y;});
+routeHandle.addEventListener('pointerup',()=>{if(!routeDrag)return;const delta=routeDrag.delta;routeDrag=null;if(Math.abs(delta)>25){suppressRouteClick=true;setRouteCollapsed(delta>0);setTimeout(()=>suppressRouteClick=false,0);}});
+routeHandle.addEventListener('pointercancel',()=>routeDrag=null);
+routeHandle.addEventListener('click',e=>{if(suppressRouteClick){e.stopImmediatePropagation();e.preventDefault();}},{capture:true});
 $('#camera-open').innerHTML=icon('camera');$('#detail-back').innerHTML=icon('back');
-window.agioShell={showDetail,routeOpen(){routeShowing=true;location.hash='map';showScreen('map');}};
+window.agioShell={showDetail,routeOpen(){setRouteCollapsed(false);routeShowing=true;location.hash='map';showScreen('map');}};
 window.addEventListener('agio-catalog',e=>{places=e.detail.filter(p=>p.status!=='closed').sort((a,b)=>a.order-b.order);renderHome();renderSaved();renderSpaceOptions();if(location.hash.startsWith('#space/'))route();});
 function renderHome(){
   const grid=$('#home-grid');grid.replaceChildren();$('#space-count').textContent=String(places.length).padStart(2,'0');
@@ -144,7 +157,7 @@ async function openGallery(){
   await loadMore();
 }
 $('#my-photos').onclick=openGallery;
-function intro(){const splash=$('#splash');splash.hidden=false;splash.classList.remove('playing');void splash.offsetWidth;splash.classList.add('playing');clearTimeout(intro.timer);intro.timer=setTimeout(()=>splash.hidden=true,matchMedia('(prefers-reduced-motion: reduce)').matches?100:2400);}
+function intro(){playIntro($('#splash'));}
 intro();route();
 // Personal storage never holds up the official catalogue or map.
 const personalReady=(async()=>{try{records=new Map((await allRecords()).map(r=>[r.placeId,r]));storageReady=true;renderSaved();if(currentDetail)renderDetail(currentDetail);await updatePhotoCount();}catch(e){toast(e.message);}})();
