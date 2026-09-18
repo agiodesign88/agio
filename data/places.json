@@ -250,5 +250,32 @@
     ],
     "updatedAt": "2026-09-18T02:59:11.685Z",
     "id": "9bbc7791-d7c5-4c5a-90f7-30126c0b6bbd"
+  },
+  {
+    "name": "SUJIPMIHAK",
+    "address": "서울특별시 용산구 한남동 657-24",
+    "lat": 37.5351233236483,
+    "lng": 127.001652108808,
+    "color": "#d6d5c1",
+    "status": "draft",
+    "instagram": "@sujipmihak",
+    "hours": "매일 12:00~20:00",
+    "category": "프래그런스·향수·바디케어 브랜드 플래그십 스토어",
+    "order": 11,
+    "images": [
+      "/uploads/5a89d149e590790321db08118b88a284.jpg",
+      "/uploads/40c80e0fed8f99b01a52b5283686bae5.jpg",
+      "/uploads/162e41e729553dc6e2a437e221e95319.jpg",
+      "/uploads/fda1cd82d54e30f2fb03f05138bbbb42.jpg",
+      "/uploads/2ddaf1453e69c662d249d5d2f7ff7aee.jpg",
+      "/uploads/a88ac523c05a817f0fd2f4272255cf86.jpg",
+      "/uploads/4f714fc132f7f9b08e784c0d0f24eb0f.jpg",
+      "/uploads/3f56ca3f0b3d027e2dd8ecc4b681e372.jpg",
+      "/uploads/71f541871cabff004adc0d72b005e2de.jpg",
+      "/uploads/327e99885e3ca0d61539d76d14373427.jpg",
+      "/uploads/066548f6bf99d2e1173ad6e5a148f756.jpg"
+    ],
+    "updatedAt": "2026-09-18T04:57:32.939Z",
+    "id": "folder-96e2a9ab1e61a1f8e5db3b534c1f90b4ad6f82fc97118f3697183939d33ceb20"
   }
 ]
