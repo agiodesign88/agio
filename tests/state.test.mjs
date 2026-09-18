@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {transition,cluster} from '../public/state.mjs';import {validatePlace} from '../lib/catalog.mjs';
+test('un saved photo registration becomes colored; unsave restores initial state',()=>{const visited=transition(undefined,'visit');assert.deepEqual(visited,{saved:true,visited:true});assert.deepEqual(transition(visited,'toggle-save'),{saved:false,visited:false});assert.deepEqual(transition(undefined,'toggle-save'),{saved:true,visited:false});});
+test('zoom separates nearby screen points, same building remains selectable group',()=>{assert.equal(cluster([{x:10,y:10},{x:15,y:15}]).length,1);assert.equal(cluster([{x:10,y:10},{x:100,y:100}]).length,2);assert.equal(cluster([{x:10,y:10},{x:10,y:10}])[0].points.length,2);});
+const draft={name:'공간',address:'서울',color:'#778899',status:'draft',lat:'',lng:'',images:[]};
+test('draft may omit coordinates but published place must have coordinates',()=>{assert.equal(validatePlace(draft).lat,null);assert.throws(()=>validatePlace({...draft,status:'published'}),/좌표/);assert.throws(()=>validatePlace({...draft,lat:37,lng:''}),/함께/);});
+test('reject invalid coordinates, paths and instagram links',()=>{assert.throws(()=>validatePlace({...draft,lat:200,lng:127}),/좌표/);assert.throws(()=>validatePlace({...draft,images:['/../../.env.local']}),/경로/);assert.throws(()=>validatePlace({...draft,instagram:'javascript:alert(1)'}),/계정/);});
