@@ -1,15 +1,14 @@
 [
   {
-    "id": "abp-lounge",
     "name": "ABP.LOUNGE",
     "address": "서울특별시 중구 퇴계로87길 53, 1층",
     "lat": 37.567891522755,
     "lng": 127.020840944801,
     "color": "#e2ebe6",
     "status": "draft",
-    "hours": "",
+    "instagram": "@abp_seoul",
+    "hours": "매일 09:00~익일 01:00 (라스트오더 00:00)",
     "category": "카페",
-    "instagram": "",
     "order": 0,
     "images": [
       "/uploads/f378d8bb-195c-48d7-a0a7-6c8e5281791e.jpg",
@@ -19,7 +18,8 @@
       "/uploads/69280454-cce0-4133-b750-44410f661aca.jpg",
       "/uploads/7fff70c4-595d-491c-9c3e-1cd153e9c979.jpg"
     ],
-    "updatedAt": "2026-09-17T05:36:19.062Z"
+    "updatedAt": "2026-09-18T02:41:09.537Z",
+    "id": "abp-lounge"
   },
   {
     "name": "FRITZ HANSEN",
@@ -50,9 +50,9 @@
     "lng": 127.008747906187,
     "color": "#f6f7e7",
     "status": "draft",
-    "instagram": "",
+    "instagram": "@miraebuilding",
     "hours": "",
-    "category": "",
+    "category": "복합문화공간",
     "order": 2,
     "images": [
       "/uploads/0c33d843-e961-54c0-9298-14793e26eaa9.jpg",
@@ -63,7 +63,7 @@
       "/uploads/45efd5ac-ce58-546d-8c8b-429bddec2979.jpg",
       "/uploads/5afab997-2ada-5f0c-a529-f03f18795c0d.jpg"
     ],
-    "updatedAt": "2026-09-17T05:53:26.220Z",
+    "updatedAt": "2026-09-18T02:41:09.550Z",
     "id": "fdc57dc6-bf05-4bcf-b324-7535d2e8fbc7"
   },
   {
@@ -73,8 +73,8 @@
     "lng": 126.392502224295,
     "color": "#e7e7e7",
     "status": "draft",
-    "instagram": "",
-    "hours": "",
+    "instagram": "@bontemuseum",
+    "hours": "매일 10:00~18:00 (입장마감 17:00, 연중무휴)",
     "category": "미술관",
     "order": 3,
     "images": [
@@ -86,7 +86,7 @@
       "/uploads/06b627f9-efb8-5c72-97fd-20f9260eca3b.jpg",
       "/uploads/d4b4237a-2af9-5fc2-b6c6-48551109330c.jpg"
     ],
-    "updatedAt": "2026-09-17T05:53:26.232Z",
+    "updatedAt": "2026-09-18T02:41:09.560Z",
     "id": "9d1e35ad-a7a9-4109-a904-c42abd468043"
   },
   {
@@ -96,8 +96,8 @@
     "lng": 126.940072207409,
     "color": "#5f5f5f",
     "status": "draft",
-    "instagram": "",
-    "hours": "",
+    "instagram": "@centrepompidouhanwha",
+    "hours": "화·목·금·일 10:00~18:00 / 수·토 10:00~21:00 (입장마감 30분 전). 월요일·1월 1일·설날 및 추석 당일 휴관",
     "category": "미술관",
     "order": 4,
     "images": [
@@ -112,7 +112,7 @@
       "/uploads/c3a2850e-3867-5e98-98aa-3d4e33c339b6.jpg",
       "/uploads/c32cd277-598c-5c71-96d1-0313056651b3.jpg"
     ],
-    "updatedAt": "2026-09-17T05:53:26.247Z",
+    "updatedAt": "2026-09-18T02:41:09.581Z",
     "id": "6ddea4f2-075d-4d52-a2cc-cd8d1759def7"
   },
   {
@@ -123,7 +123,7 @@
     "color": "#91bf9a",
     "status": "draft",
     "instagram": "",
-    "hours": "",
+    "hours": "매일 10:30~20:00",
     "category": "복합문화공간",
     "order": 5,
     "images": [
@@ -134,7 +134,7 @@
       "/uploads/7714d89a-95ca-5912-b9ec-eeb6f51f0c2e.jpg",
       "/uploads/d2a49128-b805-57ab-aa4f-11876aa602dd.jpg"
     ],
-    "updatedAt": "2026-09-17T05:53:26.262Z",
+    "updatedAt": "2026-09-18T02:41:09.610Z",
     "id": "2579c952-1338-4754-aef5-69b969cc7c22"
   },
   {
@@ -144,7 +144,7 @@
     "lng": 126.996024392523,
     "color": "#212116",
     "status": "draft",
-    "instagram": "",
+    "instagram": "@maha.hannam",
     "hours": "",
     "category": "카페",
     "order": 6,
@@ -159,7 +159,7 @@
       "/uploads/0528673b-fe03-592d-8109-66a68f207a20.jpg",
       "/uploads/e9b28a38-65e7-5424-a3e5-985142b7f41b.jpg"
     ],
-    "updatedAt": "2026-09-17T05:53:26.267Z",
+    "updatedAt": "2026-09-18T02:41:09.640Z",
     "id": "bf61508a-7287-42cd-80f8-0ae4109f8f38"
   },
   {
@@ -169,7 +169,7 @@
     "lng": 127.001837055876,
     "color": "#aac94a",
     "status": "draft",
-    "instagram": "",
+    "instagram": "@cccs.page",
     "hours": "",
     "category": "복합문화공간",
     "order": 7,
@@ -182,7 +182,7 @@
       "/uploads/e6637c86-5a0b-56c0-8591-bf1d62bdfdb5.jpg",
       "/uploads/9890dbb8-7acf-5642-b785-ef08dc71fd2e.jpg"
     ],
-    "updatedAt": "2026-09-17T05:53:26.277Z",
+    "updatedAt": "2026-09-18T02:41:09.670Z",
     "id": "e8a96b4d-95cd-4e91-ac9e-f1f506465de8"
   },
   {
@@ -192,7 +192,7 @@
     "lng": 126.989720988898,
     "color": "#881938",
     "status": "draft",
-    "instagram": "",
+    "instagram": "@pdf_seoul",
     "hours": "",
     "category": "서점",
     "order": 8,
@@ -203,7 +203,7 @@
       "/uploads/1ad93dd8-e913-5931-869b-815f3fadbbaf.jpg",
       "/uploads/ee571301-a491-5b67-9549-eb635c903885.jpg"
     ],
-    "updatedAt": "2026-09-17T05:53:26.282Z",
+    "updatedAt": "2026-09-18T02:41:09.700Z",
     "id": "06d39894-9d8a-48aa-a871-9b52f6d4c91f"
   },
   {
@@ -235,9 +235,9 @@
     "lng": 126.309386865676,
     "color": "#040033",
     "status": "draft",
-    "instagram": "",
+    "instagram": "@mongtan_aewol",
     "hours": "",
-    "category": "",
+    "category": "음식점·한식",
     "order": 10,
     "images": [
       "/uploads/85ea59ff-dda7-5dee-835f-4453ba5bcfa4.jpg",
@@ -248,7 +248,7 @@
       "/uploads/d167df26-b81f-5ac8-9e61-cf09d329ea52.jpg",
       "/uploads/df95d60d-0baa-5e5d-a55e-d55f90a4a7e5.jpg"
     ],
-    "updatedAt": "2026-09-17T05:53:26.307Z",
+    "updatedAt": "2026-09-18T02:41:09.717Z",
     "id": "9bbc7791-d7c5-4c5a-90f7-30126c0b6bbd"
   }
 ]
