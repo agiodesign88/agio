@@ -276,7 +276,7 @@ $('#swap-route').onclick=()=>{
 };
 document.querySelectorAll('[data-mode]').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('[data-mode]').forEach(n=>n.setAttribute('aria-pressed',n===btn));$('#route-mode').value=btn.dataset.mode;invalidateRoute();});
 $('#reload').onclick=()=>location.reload();
-async function boot(){try{config=await api('/api/config');places=await api('/api/places');$('#connection').textContent=`JavaScript 키: ${config.jsKey?'설정됨':'미설정'} / REST 키: ${config.restReady?'설정됨':'미설정'}`;renderLists();editPlace(null);window.dispatchEvent(new CustomEvent("agio-catalog",{detail:places}));await initMap();}catch(e){$('#connection').textContent=e.message;}}
+async function boot(){try{config=await api('/api/config');if(config.readOnly&&location.pathname.endsWith('/lab.html')){document.body.replaceChildren(el('p','공간 관리는 로컬 앱에서 이용해주세요. 이 배포는 조회 전용입니다.'));return;}places=await api('/api/places');$('#connection').textContent=`JavaScript 키: ${config.jsKey?'설정됨':'미설정'} / REST 키: ${config.restReady?'설정됨':'미설정'}`;renderLists();editPlace(null);window.dispatchEvent(new CustomEvent("agio-catalog",{detail:places}));await initMap();}catch(e){$('#connection').textContent=e.message;}}
 export const ready=boot();
 export {beginRoute,selectPlace};
 export function refreshMap(){map?.resize();drawPins();}
