@@ -258,10 +258,10 @@ async function searchOrigin(){
   const address=$('#origin-address').value.trim();if(!address){$('#location-status').textContent='출발 주소를 입력해주세요.';return;}
   const version=++originSearchVersion;$('#location-status').textContent='주소 검색 중…';$('#origin-results').replaceChildren();
   try{const rows=await api('/api/geocode','POST',{address});if(version!==originSearchVersion)return;
-    $('#location-status').textContent=rows.length?'출발할 주소를 선택해주세요.':'검색 결과가 없습니다. 도로명과 건물 번호를 입력해주세요.';if(!rows.length)$('#origin-results').append(el('p','검색 결과가 없습니다. 도로명과 건물 번호를 입력해주세요.','muted'));
-    for(const row of rows)$('#origin-results').append(button(row.address,()=>{
+    $('#location-status').textContent=rows.length?'출발할 주소를 선택해주세요.':'검색 결과가 없습니다. 주소 또는 장소 이름을 확인해주세요.';if(!rows.length)$('#origin-results').append(el('p','검색 결과가 없습니다. 주소 또는 장소 이름을 확인해주세요.','muted'));
+    for(const row of rows)$('#origin-results').append(button(row.name?row.name+' · '+row.address:row.address,()=>{
       if(version!==originSearchVersion)return;
-      $('#origin-address').value=row.address;$('#start-lat').value=row.lat;$('#start-lng').value=row.lng;
+      $('#origin-address').value=row.name||row.address;$('#start-lat').value=row.lat;$('#start-lng').value=row.lng;
       $('#origin-results').replaceChildren();$('#location-status').textContent='출발 주소가 설정됐습니다.';invalidateRoute();
     },'place-item'));
   }catch(error){if(version===originSearchVersion){$('#location-status').textContent=error.message;$('#origin-results').replaceChildren(el('p',error.message,'muted'));}}
@@ -356,8 +356,8 @@ async function searchDestination(){
   const address=$('#destination-address').value.trim();if(!address)return notify('도착지 주소를 입력해주세요.');
   const version=++destinationSearchVersion;$('#destination-results').replaceChildren();$('#route-status').textContent='도착지 검색 중…';
   try{const rows=await api('/api/geocode','POST',{address});if(version!==destinationSearchVersion)return;
-    $('#route-status').textContent=rows.length?'도착할 주소를 선택해주세요.':'검색 결과가 없습니다. 도로명과 건물 번호를 확인해주세요.';
-    for(const row of rows)$('#destination-results').append(button(row.address,()=>{if(version!==destinationSearchVersion)return;$('#destination-address').value=row.address;$('#end-lat').value=row.lat;$('#end-lng').value=row.lng;$('#destination-results').replaceChildren();invalidateRoute();},'place-item'));
+    $('#route-status').textContent=rows.length?'도착할 주소를 선택해주세요.':'검색 결과가 없습니다. 주소 또는 장소 이름을 확인해주세요.';
+    for(const row of rows)$('#destination-results').append(button(row.name?row.name+' · '+row.address:row.address,()=>{if(version!==destinationSearchVersion)return;$('#destination-address').value=row.name||row.address;$('#end-lat').value=row.lat;$('#end-lng').value=row.lng;$('#destination-results').replaceChildren();invalidateRoute();},'place-item'));
   }catch(e){if(version===destinationSearchVersion)$('#route-status').textContent=e.message;}
 }
 

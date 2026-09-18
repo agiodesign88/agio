@@ -22,3 +22,14 @@ test('transit requests are forwarded with server key, with input and missing-key
  assert.equal((await request(handler,'/api/routes','POST',{...body,startLat:100})).status,400);
  assert.equal((await request(createCloudHandler({env:{}}),'/api/routes','POST',body)).status,503);
 });
+test('place names use keyword search when address lookup is empty',async()=>{
+ const urls=[];const handler=createCloudHandler({env:{KAKAO_REST_KEY:'test'},fetchImpl:async url=>{urls.push(url);return {ok:true,json:async()=>({documents:url.includes('keyword.json')?[{place_name:'서울역',road_address_name:'서울 용산구 한강대로 405',x:'126.97',y:'37.55'}]:[]})};}});
+ const result=await request(handler,'/api/geocode','POST',{address:'서울역'});
+ assert.equal(result.status,200);assert.equal(result.data[0].name,'서울역');assert.equal(result.data[0].lat,37.55);assert.equal(urls.length,2);
+ assert.ok(urls[1].includes('keyword.json'));
+});
+test('street address results do not trigger extra keyword requests',async()=>{
+ let calls=0;const handler=createCloudHandler({env:{KAKAO_REST_KEY:'test'},fetchImpl:async()=>{calls++;return {ok:true,json:async()=>({documents:[{address_name:'서울 중구 퇴계로87길 53',x:'127',y:'37'}]})};}});
+ const result=await request(handler,'/api/geocode','POST',{address:'퇴계로87길 53'});
+ assert.equal(result.data[0].address,'서울 중구 퇴계로87길 53');assert.equal(calls,1);
+});
