@@ -114,7 +114,7 @@ function watchLocation(){
 }
 window.addEventListener('pagehide',()=>{locationTrackingHealthy=false;if(locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null;}});
 window.addEventListener('pageshow',()=>{if(map)watchLocation();});
-function setPinEndpoint(value){pinEndpoint=value;for(const [id,key] of [['origin-address','origin'],['destination-address','destination']])$('#'+id).closest('.endpoint-row').classList.toggle('pin-target',value===key);drawPins();}
+function setPinEndpoint(value){pinEndpoint=value;if(value)map?.stop();for(const [id,key] of [['origin-address','origin'],['destination-address','destination']])$('#'+id).closest('.endpoint-row').classList.toggle('pin-target',value===key);drawPins();}
 for(const [id,key] of [['origin-address','origin'],['destination-address','destination']]){
  const input=$('#'+id);
  input.addEventListener('focus',()=>{if(!$('.route-planner').hidden)setPinEndpoint(key);input.select();});
@@ -125,7 +125,7 @@ function leaveEndpointSelection(event){
  if(pinEndpoint&&!event.target.closest('#origin-address,#destination-address,#markers,#origin-results,#destination-results,#route-results .place-item'))setPinEndpoint(null);
 }
 document.addEventListener('pointerdown',leaveEndpointSelection);
-document.addEventListener('focusin',leaveEndpointSelection);
+document.addEventListener('keyup',event=>{if(event.key==='Tab')leaveEndpointSelection(event);});
 function applyPinAddress(p){
  if(!pinEndpoint||$('.route-planner').hidden)return false;
  if(p.lat==null)return false;
@@ -359,7 +359,7 @@ function showRoute(route,mode,{details=true}={}){
   valid[0].unshift(routeEndpoints[0]);valid.at(-1).push(routeEndpoints[1]);drawPins();
   map.addSource('agio-route',{type:'geojson',data:{type:'Feature',properties:{},geometry:{type:'MultiLineString',coordinates:valid}}});
   map.addLayer({id:'agio-route',type:'line',source:'agio-route',layout:{'line-join':'round','line-cap':'round'},paint:{'line-color':'#111','line-width':4,'line-opacity':.8}});
-  fitRouteView(valid.flat());
+  if(!pinEndpoint)fitRouteView(valid.flat());
 }
 $('#route-form').onsubmit=async e=>{e.preventDefault();if(locationPending&&(!$('#start-lat').value||!$('#start-lng').value))await locationPending;if(!$('#start-lat').value||!$('#start-lng').value){if($('#origin-address').value.trim()){await searchOrigin();return;}if(!await fillCurrentLocation())return;}if(!$('#end-lat').value||!$('#end-lng').value){await searchDestination();return;}const target={lat:Number($('#end-lat').value),lng:Number($('#end-lng').value)};const mode=$('#route-mode').value;$('#route-results').replaceChildren();clearLines();$('#route-status').textContent='카카오에서 실제 경로를 조회하는 중…';const requestVersion=routeVersion;try{const result=await api('/api/routes','POST',{mode,startLat:Number($('#start-lat').value),startLng:Number($('#start-lng').value),endLat:target.lat,endLng:target.lng});if(requestVersion!==routeVersion||$('.route-planner').hidden)return;const routes=routesFromResponse(result);if(!routes.length)throw new Error('이 구간의 경로가 없습니다. 출발지와 목적지를 확인하세요.');$('#route-status').textContent='';routes.forEach((route,i)=>{const prop=route.properties||route.summary||{};const seconds=prop.totalTime??prop.duration;const distance=prop.totalDistance??prop.distance;const label=`경로 ${i+1}${seconds!=null?' · '+Math.ceil(seconds/60)+'분':''}${distance!=null?' · '+(distance/1000).toFixed(1)+'km':''}`;const btn=button(null,()=>{document.querySelectorAll('.route-option').forEach(n=>n.setAttribute('aria-pressed','false'));const expanded=btn.getAttribute('aria-expanded')==='true';document.querySelectorAll('.route-option').forEach(n=>n.setAttribute('aria-expanded','false'));btn.setAttribute('aria-pressed','true');btn.setAttribute('aria-expanded',String(!expanded));document.querySelector('#route-details')?.remove();showRoute(route,mode,{details:!expanded});},'route-option');btn.setAttribute('aria-pressed','false');btn.setAttribute('aria-label',label+' 상세 경로');btn.setAttribute('aria-expanded','false');btn.append(...routeCardContent(route));$('#route-results').append(btn);});const first=$('#route-results .route-option');first?.setAttribute('aria-pressed','true');showRoute(routes[0],mode,{details:false});}catch(e){if(requestVersion===routeVersion)$('#route-status').textContent=e.message;}};
 let destinationSearchVersion=0;
