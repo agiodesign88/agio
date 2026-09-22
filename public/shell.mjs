@@ -54,7 +54,7 @@ routeHandle.addEventListener('pointermove',e=>{if(routeDrag)routeDrag.delta=e.cl
 routeHandle.addEventListener('pointerup',()=>{if(!routeDrag)return;const delta=routeDrag.delta;routeDrag=null;if(Math.abs(delta)>25){suppressRouteClick=true;setRouteCollapsed(delta>0);setTimeout(()=>suppressRouteClick=false,0);}});
 routeHandle.addEventListener('pointercancel',()=>routeDrag=null);
 routeHandle.addEventListener('click',e=>{if(suppressRouteClick){e.stopImmediatePropagation();e.preventDefault();}},{capture:true});
-$('#camera-open').innerHTML=icon('camera');$('#detail-back').innerHTML=icon('back');
+$('#camera-open').disabled=true;$('#camera-open').innerHTML=icon('camera');$('#detail-back').innerHTML=icon('back');
 window.agioShell={showDetail,createSaveButton,routeOpen(){setRouteCollapsed(false);routeShowing=true;location.hash='map';showScreen('map');}};
 window.addEventListener('agio-catalog',e=>{places=e.detail.filter(p=>p.status!=='closed').sort((a,b)=>a.order-b.order);renderHome();renderSaved();renderSpaceOptions();if(location.hash.startsWith('#space/'))route();});
 function renderHome(){
