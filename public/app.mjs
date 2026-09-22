@@ -144,7 +144,10 @@ function selectPlace(p){
   picture.append(photoNode(p.images[0],p.name));
   const close=button('×',closePanel,'panel-close');close.setAttribute('aria-label','공간 패널 닫기');
   const bottom=el('div',null,'panel-bottom');
-  bottom.append(button(p.name,()=>showDetail(p),'space-name'),iconButton('directions','DIRECTIONS',()=>beginRoute(p)));
+  const directions=iconButton('directions','길찾기',()=>beginRoute(p));
+  directions.innerHTML='<img class="discovery-icon" src="/discovery-icon.svg" alt="">';
+  bottom.append(button(p.name,()=>showDetail(p),'space-name'),directions);
+  if(window.agioShell?.createSaveButton)bottom.append(window.agioShell.createSaveButton(p));
   panel.append(picture,close,bottom);
   if(map&&p.lat!=null){
     // Keep the popup ten pixels above the pin head, with both visible.

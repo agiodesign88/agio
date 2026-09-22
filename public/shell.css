@@ -18,3 +18,10 @@
  .product .route-planner.is-collapsed .route-sheet-handle{position:relative}
 }
 @media(prefers-reduced-motion:reduce){.product .route-planner{transition:none}}
+
+/* Map card actions: full title and two comfortable touch targets. */
+.product .place-panel .panel-bottom{display:flex;flex-wrap:wrap;justify-content:flex-end;padding:4px 6px;gap:0}
+.product .place-panel .panel-bottom .space-name{flex:1 0 100%;padding:6px 2px}
+.product .place-panel .panel-bottom button:not(.space-name){width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;padding:10px}
+.product .place-panel .panel-bottom img.discovery-icon{width:24px;height:24px;aspect-ratio:1;object-fit:contain}
+[data-save-place][aria-pressed=true] .icon{fill:#111}

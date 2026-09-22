@@ -15,8 +15,29 @@ let selectedPhoto=null,previewURL=null,storageReady=false,visitBusy=false,select
 const savingPlaces=new Set();
 const recordChannel=typeof BroadcastChannel!=='undefined'?new BroadcastChannel('agio-record-changes'):null;
 recordChannel?.addEventListener('message',()=>refreshRecords().catch(e=>toast(e.message)));
-async function refreshRecords(){records=new Map((await allRecords()).map(r=>[r.placeId,r]));renderSaved();if(currentDetail)renderDetail(currentDetail);await updatePhotoCount();}
-function changed(){recordChannel?.postMessage('changed');}
+async function refreshRecords(){records=new Map((await allRecords()).map(r=>[r.placeId,r]));renderSaved();updateSaveButtons();if(currentDetail)renderDetail(currentDetail);await updatePhotoCount();}
+function updateSaveButtons(){
+  document.querySelectorAll('[data-save-place]').forEach(b=>{
+    const saved=!!records.get(b.dataset.savePlace)?.saved;
+    b.disabled=!storageReady||savingPlaces.has(b.dataset.savePlace);
+    b.setAttribute('aria-pressed',String(saved));
+    b.setAttribute('aria-label',saved?'저장 해제':'공간 저장');b.title=saved?'저장 해제':'공간 저장';
+  });
+}
+function createSaveButton(p){
+  const b=ibtn('save','공간 저장',async()=>{
+    if(!storageReady||savingPlaces.has(p.id))return;
+    savingPlaces.add(p.id);updateSaveButtons();
+    try{const next=await setSaved(p.id,!records.get(p.id)?.saved);records.set(p.id,next);renderSaved();changed();toast(next.saved?'공간을 저장했습니다.':'저장을 해제했습니다.');}
+    catch(e){toast(e.message);}
+    finally{savingPlaces.delete(p.id);updateSaveButtons();}
+  });
+  b.dataset.savePlace=p.id;b.disabled=!storageReady||savingPlaces.has(p.id);
+  const saved=!!records.get(p.id)?.saved;b.setAttribute('aria-pressed',String(saved));b.setAttribute('aria-label',saved?'저장 해제':'공간 저장');b.title=saved?'저장 해제':'공간 저장';
+  return b;
+}
+function discoveryButton(p){const b=ibtn('directions','길찾기',()=>engine.beginRoute(p));b.innerHTML='<img class="discovery-icon" src="/discovery-icon.svg" alt="">';return b;}
+function changed(){updateSaveButtons();recordChannel?.postMessage('changed');}
 const stage=$('.map-stage');$('#map-mount').append(stage);$('#map-screen').append($('.route-planner'));
 const routePanel=$('.route-planner');
 const routeHandle=btn(null,()=>setRouteCollapsed(!routePanel.classList.contains('is-collapsed')),'route-sheet-handle');
@@ -31,7 +52,7 @@ routeHandle.addEventListener('pointerup',()=>{if(!routeDrag)return;const delta=r
 routeHandle.addEventListener('pointercancel',()=>routeDrag=null);
 routeHandle.addEventListener('click',e=>{if(suppressRouteClick){e.stopImmediatePropagation();e.preventDefault();}},{capture:true});
 $('#camera-open').innerHTML=icon('camera');$('#detail-back').innerHTML=icon('back');
-window.agioShell={showDetail,routeOpen(){setRouteCollapsed(false);routeShowing=true;location.hash='map';showScreen('map');}};
+window.agioShell={showDetail,createSaveButton,routeOpen(){setRouteCollapsed(false);routeShowing=true;location.hash='map';showScreen('map');}};
 window.addEventListener('agio-catalog',e=>{places=e.detail.filter(p=>p.status!=='closed').sort((a,b)=>a.order-b.order);renderHome();renderSaved();renderSpaceOptions();if(location.hash.startsWith('#space/'))route();});
 function renderHome(){
   const grid=$('#home-grid');grid.replaceChildren();$('#space-count').textContent=String(places.length).padStart(2,'0');
@@ -56,8 +77,7 @@ function renderDetail(p){
   for(const v of [p.address?.trim()||'주소 미등록',p.hours?.trim()||'운영시간 미등록',p.category?.trim()||'카테고리 미등록'])text.append(el('p',v));
   if(!p.instagram?.trim())text.append(el('p','인스타 계정 미등록'));
   if(p.instagram?.trim()){const account=p.instagram.trim().replace(/^@/,'');if(/^[\w.]+$/.test(account)){const a=el('a','@'+account);a.href='https://www.instagram.com/'+encodeURIComponent(account)+'/';a.target='_blank';a.rel='noreferrer';text.append(a);}}
-  const actions=el('div',null,'actions');const save=ibtn('save',records.get(p.id)?.saved?'저장 해제':'SAVE',async()=>{if(savingPlaces.has(p.id))return;savingPlaces.add(p.id);save.disabled=true;try{const next=await setSaved(p.id,!records.get(p.id)?.saved);records.set(p.id,next);renderSaved();changed();toast(next.saved?'공간을 저장했습니다.':'저장을 해제했습니다.');}catch(e){toast(e.message);}finally{savingPlaces.delete(p.id);if(currentDetail?.id===p.id)renderDetail(p);}});
-  save.disabled=!storageReady||savingPlaces.has(p.id);save.setAttribute('aria-pressed',!!records.get(p.id)?.saved);actions.append(save,ibtn('directions','DIRECTIONS',()=>engine.beginRoute(p)));caption.append(text,actions);box.append(caption);
+  const actions=el('div',null,'actions');const save=createSaveButton(p);actions.append(save,ibtn('directions','DIRECTIONS',()=>engine.beginRoute(p)));caption.append(text,actions);box.append(caption);
   for(const url of p.images.slice(1))box.append(image(url,p.name));
 }
 function renderSpaceOptions(){const select=$('#visit-place');select.replaceChildren();for(const p of places){const o=el('option',p.name);o.value=p.id;select.append(o);}$('#camera-open').disabled=!places.length;}
@@ -120,7 +140,7 @@ function renderSaved(){
   const list=$('#saved-list');list.replaceChildren();for(const p of saved){const b=btn(null,()=>showDetail(p),'saved-space');if(p.images[0])b.append(image(p.images[0],p.name));const t=el('div');t.append(el('strong',p.name),el('span',records.get(p.id).visited?'VISITED':'SAVED'));b.append(t);list.append(b);}
 }
 function openSavedPanel(items){const panel=$('#saved-panel');panel.hidden=false;panel.replaceChildren();const p=items[0];if(items.length>1){for(const item of items)panel.append(btn(item.name,()=>openSavedPanel([item]),'place-item'));panel.append(btn('닫기',()=>panel.hidden=true));return;}
-  const photo=btn(null,()=>showDetail(p),'panel-photo');if(p.images[0])photo.append(image(p.images[0],p.name));const bottom=el('div',null,'panel-bottom');bottom.append(btn(p.name,()=>showDetail(p),'space-name'),ibtn('directions','DIRECTIONS',()=>engine.beginRoute(p)));panel.append(photo,btn('×',()=>panel.hidden=true,'panel-close'),bottom);
+  const photo=btn(null,()=>showDetail(p),'panel-photo');if(p.images[0])photo.append(image(p.images[0],p.name));const bottom=el('div',null,'panel-bottom');bottom.append(btn(p.name,()=>showDetail(p),'space-name'),discoveryButton(p),createSaveButton(p));panel.append(photo,btn('×',()=>panel.hidden=true,'panel-close'),bottom);
 }
 function setZoom(next){const old=zoom;zoom=Math.max(1,Math.min(14,next));if(zoom===1)center=[200,270];else if(old===1){const p=places.find(p=>records.get(p.id)?.saved&&p.lat!=null);center=p?project([p.lng,p.lat]):[190,180];}$('#saved-panel').hidden=true;renderSaved();}
 $('#saved-plus').onclick=()=>setZoom(zoom*1.8);$('#saved-minus').onclick=()=>setZoom(zoom/1.8);$('#saved-reset').onclick=()=>setZoom(1);
@@ -160,7 +180,7 @@ $('#my-photos').onclick=openGallery;
 function intro(){const splash=$('#splash');splash.hidden=false;splash.classList.remove('playing');void splash.offsetWidth;splash.classList.add('playing');clearTimeout(intro.timer);intro.timer=setTimeout(()=>splash.hidden=true,matchMedia('(prefers-reduced-motion: reduce)').matches?100:2400);}
 intro();route();
 // Personal storage never holds up the official catalogue or map.
-const personalReady=(async()=>{try{records=new Map((await allRecords()).map(r=>[r.placeId,r]));storageReady=true;renderSaved();if(currentDetail)renderDetail(currentDetail);await updatePhotoCount();}catch(e){toast(e.message);}})();
+const personalReady=(async()=>{try{records=new Map((await allRecords()).map(r=>[r.placeId,r]));storageReady=true;renderSaved();updateSaveButtons();if(currentDetail)renderDetail(currentDetail);await updatePhotoCount();}catch(e){toast(e.message);}})();
 engine=await import('./app.mjs');
 await engine.ready;
 if(!places.length)$('#home-status').textContent='공간을 불러오지 못했거나 등록된 공간이 없습니다. 새로고침해 다시 확인해주세요.';
