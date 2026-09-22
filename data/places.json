@@ -237,7 +237,7 @@
     "status": "draft",
     "instagram": "@mongtan_aewol",
     "hours": "매일 12:00~21:30 (라스트오더 20:30)",
-    "category": "음식점·한식",
+    "category": "음식점",
     "order": 10,
     "images": [
       "/uploads/85ea59ff-dda7-5dee-835f-4453ba5bcfa4.jpg",
@@ -248,7 +248,7 @@
       "/uploads/d167df26-b81f-5ac8-9e61-cf09d329ea52.jpg",
       "/uploads/df95d60d-0baa-5e5d-a55e-d55f90a4a7e5.jpg"
     ],
-    "updatedAt": "2026-09-18T02:59:11.685Z",
+    "updatedAt": "2026-09-22T06:23:33.416Z",
     "id": "9bbc7791-d7c5-4c5a-90f7-30126c0b6bbd"
   },
   {
@@ -260,7 +260,7 @@
     "status": "draft",
     "instagram": "@sujipmihak",
     "hours": "매일 12:00~20:00",
-    "category": "프래그런스·향수·바디케어 브랜드 플래그십 스토어",
+    "category": "Showroom",
     "order": 11,
     "images": [
       "/uploads/5a89d149e590790321db08118b88a284.jpg",
@@ -275,7 +275,7 @@
       "/uploads/327e99885e3ca0d61539d76d14373427.jpg",
       "/uploads/066548f6bf99d2e1173ad6e5a148f756.jpg"
     ],
-    "updatedAt": "2026-09-18T04:57:32.939Z",
+    "updatedAt": "2026-09-22T06:23:33.371Z",
     "id": "folder-96e2a9ab1e61a1f8e5db3b534c1f90b4ad6f82fc97118f3697183939d33ceb20"
   }
 ]
