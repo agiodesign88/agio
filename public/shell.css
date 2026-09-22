@@ -19,9 +19,10 @@
 }
 @media(prefers-reduced-motion:reduce){.product .route-planner{transition:none}}
 
-/* Map card actions: full title and two comfortable touch targets. */
-.product .place-panel .panel-bottom{display:flex;flex-wrap:wrap;justify-content:flex-end;padding:4px 6px;gap:0}
-.product .place-panel .panel-bottom .space-name{flex:1 0 100%;padding:6px 2px}
-.product .place-panel .panel-bottom button:not(.space-name){width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;padding:10px}
-.product .place-panel .panel-bottom img.discovery-icon{width:24px;height:24px;aspect-ratio:1;object-fit:contain}
+/* Keep the name, save action and directions on one compact row. */
+.product .place-panel .panel-bottom{display:flex;flex-wrap:nowrap;align-items:center;padding:2px 4px 2px 8px;gap:0}
+.product .place-panel .panel-bottom .space-name{order:0;flex:1 1 auto;min-width:0;padding:6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.product .place-panel .panel-bottom button:not(.space-name){order:2;width:28px;height:44px;flex:0 0 28px;display:grid;place-items:center;padding:4px}
+.product .place-panel .panel-bottom button[data-save-place]{order:1}
+.product .place-panel .panel-bottom .icon,.product .place-panel .panel-bottom img.discovery-icon{width:20px;height:20px;aspect-ratio:1;object-fit:contain}
 [data-save-place][aria-pressed=true] .icon{fill:#111}
