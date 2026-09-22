@@ -1,3 +1,5 @@
+import {externalMapLinks} from './external-maps.mjs';
+import {transitIcon,transitLabel} from './transit-icons.mjs';
 import {readablePhoto} from './photo-input.mjs';
 import {routesFromResponse,routeLegs,routeOverview,simplifyRoutePaths} from './routes.mjs';
 import {samplePhoto} from './photo-color.mjs';
@@ -5,6 +7,9 @@ import {editorialStyle} from './editorial-style.mjs';
 import {currentPosition,stablePosition,createAddressCache} from './location.mjs';
 import {transition,cluster} from './state.mjs';
 const $=s=>document.querySelector(s), form=$('#place-form');
+document.querySelector('[data-mode="transit"]').innerHTML=transitIcon('BUS');
+const routeAlternatives=externalMapLinks(()=>({query:$('#destination-address').value,mode:$('#route-mode').value,destination:$('#end-lat').value&&$('#end-lng').value?{lat:Number($('#end-lat').value),lng:Number($('#end-lng').value)}:null}));
+$('.route-planner').append(routeAlternatives);
 // Let the browser open its native color picker, including its own eyedropper.
 const colorInput=form.elements.namedItem('color');
 colorInput.addEventListener('change',()=>{
@@ -70,8 +75,9 @@ let pinEndpoint=null;
 let routeEndpoints=[];
 let liveLocation=null,locationWatch=null,lastLocation=null,locationTrackingHealthy=false;
 const cachedAddress=createAddressCache(p=>api('/api/reverse-geocode','POST',{lat:p.latitude,lng:p.longitude}));
-let devicePositionPending=null;
+let devicePositionPending=null,locationRequested=false;
 function knownPosition(){
+  locationRequested=true;
   if(lastLocation&&(locationTrackingHealthy||Date.now()-lastLocation.receivedAt<60000))return Promise.resolve(lastLocation);
   if(!devicePositionPending)devicePositionPending=currentPosition(navigator.geolocation).then(coords=>{rememberLocation(coords);return lastLocation;}).finally(()=>devicePositionPending=null);
   return devicePositionPending;
@@ -105,7 +111,7 @@ function fitInitialMap(){
 }
 function rememberLocation(coords){lastLocation=stablePosition(lastLocation,coords);liveLocation=[lastLocation.longitude,lastLocation.latitude];fitInitialMap();drawPins();}
 function watchLocation(){
- if(locationWatch!==null||!navigator.geolocation)return;
+ if(!locationRequested||document.visibilityState==='hidden'||locationWatch!==null||!navigator.geolocation)return;
  locationWatch=navigator.geolocation.watchPosition(p=>{locationTrackingHealthy=true;rememberLocation(p.coords);},error=>{
   locationTrackingHealthy=false;
   locationUnavailable=true;fitInitialMap();
@@ -114,6 +120,7 @@ function watchLocation(){
 }
 window.addEventListener('pagehide',()=>{locationTrackingHealthy=false;if(locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null;}});
 window.addEventListener('pageshow',()=>{if(map)watchLocation();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){locationTrackingHealthy=false;if(locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null;}}else if(map)watchLocation();});
 function setPinEndpoint(value){pinEndpoint=value;if(value)map?.stop();for(const [id,key] of [['origin-address','origin'],['destination-address','destination']])$('#'+id).closest('.endpoint-row').classList.toggle('pin-target',value===key);drawPins();}
 for(const [id,key] of [['origin-address','origin'],['destination-address','destination']]){
  const input=$('#'+id);
@@ -218,7 +225,7 @@ async function initMap(){
     map.on('movestart',event=>{if(event.originalEvent)initialMapFitted=true;});
     new ResizeObserver(()=>{map.resize();fitInitialMap();drawPins();}).observe($('.map-stage'));
     fitInitialMap();drawPins();watchLocation();
-  }catch(e){$('#map-message').replaceChildren(el('b','지도 연결 확인 필요'),el('p',e.message));$('#connection').textContent=e.message;}
+  }catch(e){$('#map-message').style.pointerEvents='auto';$('#map-message').replaceChildren(el('b','지도 연결 확인 필요'),el('p',e.message),externalMapLinks(()=>({query:selected?.address||'서울'})));$('#connection').textContent=e.message;}
 }
 let locationPending=null;
 function fillCurrentLocation(){
@@ -308,11 +315,10 @@ function routeCardContent(route){
   for(const leg of transit){
     const row=el('span',null,'route-summary-stop'),badge=el('span',null,'route-summary-badge');
     const names=leg.vehicles.join(', ');
-    if(leg.type==='BUS')badge.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="15" rx="2"/><path d="M6 10h12M8 18v3m8-3v3M8 14h1m6 0h1"/></svg>';
-    else {const icon=document.querySelector('[data-mode="transit"] svg');if(icon)badge.append(icon.cloneNode(true));}
+    badge.innerHTML=transitIcon(leg.type);
     const body=el('span',null,'route-summary-body');
     body.append(el('span',leg.stops[0]||leg.guidance||'승차 장소 미제공','route-summary-station'));
-    const lines=el('span',null,'route-summary-lines');lines.append(el('span',leg.type==='BUS'?'버스':'지하철','route-summary-tag'),document.createTextNode(' '+(names||'노선 정보 미제공')));body.append(lines);
+    const lines=el('span',null,'route-summary-lines');lines.append(el('span',transitLabel(leg.type),'route-summary-tag'),document.createTextNode(' '+(names||'노선 정보 미제공')));body.append(lines);
     if(leg!==transit.at(-1)&&leg.stops.length>1)body.append(el('span','하차 · '+leg.stops.at(-1),'route-summary-transfer'));
     row.append(badge,body);timeline.append(row);
   }
@@ -332,11 +338,9 @@ function renderRouteDetails(route,mode){
   for(const leg of legs){
     const transit=['BUS','SUBWAY','TRAIN'].includes(leg.type),walk=leg.type==='WALKING';
     const item=el('li',null,'route-leg');const badge=el('span',null,'route-leg-icon');
-    const iconMode=walk?'walk':leg.type==='BUS'?'drive':'transit';
-    const source=document.querySelector('[data-mode="'+iconMode+'"] svg');if(source)badge.append(source.cloneNode(true));
-    if(leg.type==='BUS')badge.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="16" rx="2"/><path d="M5 10h14M8 19v2m8-2v2M8 15h1m6 0h1"/></svg>';
+    badge.innerHTML=transitIcon(leg.type);
     item.append(badge);const body=el('div',null,'route-leg-body');
-    body.append(el('strong',walk?'도보':(leg.type==='BUS'?'버스 ':'')+(leg.vehicles.join(' / ')||leg.guidance||'이동')));
+    body.append(el('strong',walk?'도보':transitLabel(leg.type)+' '+(leg.vehicles.join(' / ')||leg.guidance||'이동')));
     const meta=[];if(leg.seconds!=null)meta.push(Math.ceil(leg.seconds/60)+'분');if(leg.distance!=null)meta.push(leg.distance>=1000?(leg.distance/1000).toFixed(1)+' km':Math.round(leg.distance)+' m');
     if(transit&&leg.stops.length>1)meta.push((leg.stops.length-1)+'개 정류장');
     if(meta.length)body.append(el('p',meta.join(' · '),'route-leg-meta'));
@@ -404,4 +408,3 @@ async function boot(){try{config=await api('/api/config');if(config.readOnly&&lo
 export const ready=boot();
 export {beginRoute,selectPlace};
 export function refreshMap(){map?.resize();fitInitialMap();drawPins();}
-

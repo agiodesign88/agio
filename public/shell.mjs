@@ -1,4 +1,7 @@
-
+import {storeDraft,removeDraft,loadDraft,keepScreenAwake} from './visit-draft.mjs';
+import {categories,placeCategory,savedColor} from './categories.mjs';
+import {bindSavedGestures} from './saved-gestures.mjs';
+import {playIntro} from './intro.mjs';
 import {readablePhoto,isHeic} from './photo-input.mjs';
 import {allRecords,photoCount,photoPage,photoFile,setSaved,addVisit,deleteVisit} from './records.mjs';
 import {makeDotGrid,assignToDots} from './saved-grid.mjs';
@@ -81,7 +84,7 @@ function renderDetail(p){
   for(const url of p.images.slice(1))box.append(image(url,p.name));
 }
 function renderSpaceOptions(){const select=$('#visit-place');select.replaceChildren();for(const p of places){const o=el('option',p.name);o.value=p.id;select.append(o);}$('#camera-open').disabled=!places.length;}
-function openVisit(){if(!storageReady)return toast('기록 보관 기능을 사용할 수 없습니다.');if(currentDetail&&document.body.dataset.screen==='detail')$('#visit-place').value=currentDetail.id;$('#visit-dialog').showModal();}
+async function openVisit(){if(!storageReady)return toast('기록 보관 기능을 사용할 수 없습니다.');if(currentDetail&&document.body.dataset.screen==='detail')$('#visit-place').value=currentDetail.id;$('#visit-dialog').showModal();await restoreVisitDraft();}
 $('#camera-open').onclick=openVisit;
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).close());
 $('#take-photo').onclick=()=>$('#camera-file').click();$('#choose-photo').onclick=()=>$('#album-file').click();
@@ -96,17 +99,29 @@ async function chooseFile(e){
     const prepared=await readablePhoto(file,message=>{if(version===selectionVersion)$('#visit-status').textContent=message;});if(version!==selectionVersion)return;const bitmap=await createImageBitmap(prepared);if(version!==selectionVersion){bitmap.close();return;}
     const scale=Math.min(1,1800/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
     const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.88));if(version!==selectionVersion)return;if(!blob)throw new Error('사진을 읽지 못했습니다.');
-    selectedPhoto=blob;draftId=crypto.randomUUID();previewURL=URL.createObjectURL(blob);$('#visit-preview').src=previewURL;$('#visit-preview').hidden=false;$('#visit-status').textContent='선택한 공간의 주소로 기록됩니다.';$('#visit-submit').disabled=false;
+    const id=crypto.randomUUID();await storeDraft({id,placeId:$('#visit-place').value,blob,createdAt:Date.now(),submitted:false});if(version!==selectionVersion){await removeDraft(id);return;}
+    selectedPhoto=blob;draftId=id;previewURL=URL.createObjectURL(blob);$('#visit-preview').src=previewURL;$('#visit-preview').hidden=false;$('#visit-status').textContent='이 기기에 초안을 보관했습니다. 화면을 껐다 돌아와도 다시 등록할 수 있습니다.';$('#visit-submit').disabled=false;
   }catch(e){if(version===selectionVersion)$('#visit-status').textContent=e.message.includes('10MB')||isHeic(file)?e.message:'사진을 읽지 못했습니다. JPG, PNG, WebP 또는 HEIC 사진을 선택해주세요.';}
 }
 $('#camera-file').onchange=$('#album-file').onchange=chooseFile;
 $('#visit-form').onsubmit=async e=>{e.preventDefault();if(visitBusy||!selectedPhoto)return;const p=places.find(p=>p.id===$('#visit-place').value);if(!p)return;visitBusy=true;
+  const release=await keepScreenAwake();
   const controls=[...$('#visit-dialog').querySelectorAll('button,select,input')];controls.forEach(n=>n.disabled=true);
-  try{const next=await addVisit({id:draftId,placeId:p.id,blob:selectedPhoto,createdAt:Date.now()});records.set(p.id,next);renderSaved();if(currentDetail?.id===p.id)renderDetail(p);changed();updatePhotoCount();visitBusy=false;$('#visit-dialog').close();clearDraft();location.hash='saved';toast('방문을 기록했습니다. 공간의 색이 채워졌어요.');}
+  try{await storeDraft({id:draftId,placeId:p.id,blob:selectedPhoto,createdAt:Date.now(),submitted:true});const next=await addVisit({id:draftId,placeId:p.id,blob:selectedPhoto,createdAt:Date.now()});await removeDraft(draftId);records.set(p.id,next);renderSaved();if(currentDetail?.id===p.id)renderDetail(p);changed();updatePhotoCount();visitBusy=false;$('#visit-dialog').close();clearDraft();location.hash='saved';toast('방문을 기록했습니다. 공간의 색이 채워졌어요.');}
   catch(err){$('#visit-status').textContent=err.message;}
-  finally{visitBusy=false;controls.forEach(n=>n.disabled=false);$('#visit-submit').disabled=!selectedPhoto;}
+  finally{release();visitBusy=false;controls.forEach(n=>n.disabled=false);$('#visit-submit').disabled=!selectedPhoto;}
 };
-// A deliberately approximate dotted silhouette; route finding always uses original coordinates.
+async function restoreVisitDraft(){
+  if(visitBusy||selectedPhoto)return;
+  try{const draft=await loadDraft();if(!draft)return;
+    if(!places.some(p=>p.id===draft.placeId)){$('#visit-status').textContent='초안의 공간이 목록에 없습니다. 초안을 지우고 다시 선택해주세요.';return;}
+    selectedPhoto=draft.blob;draftId=draft.id;$('#visit-place').value=draft.placeId;previewURL=URL.createObjectURL(draft.blob);$('#visit-preview').src=previewURL;$('#visit-preview').hidden=false;$('#visit-submit').disabled=false;
+    $('#visit-status').textContent='보관한 초안을 복구했습니다. 등록하기를 누르면 저장됩니다.';
+  }catch(e){$('#visit-status').textContent='사진 초안을 복구하지 못했습니다. '+e.message;}
+}
+const discardDraft=btn('보관한 초안 지우기',async()=>{try{const draft=await loadDraft();if(draft)await removeDraft(draft.id);clearDraft();$('#visit-status').textContent='초안을 삭제했습니다.';}catch(e){toast(e.message);}},'text-button');$('#visit-form').append(discardDraft);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&$('#visit-dialog').open&&!visitBusy)restoreVisitDraft();});
+// The mosaic is schematic; route finding always uses original coordinates.
 const mainland=[[126.1,37.75],[126.65,37.82],[127.1,38.05],[127.7,38.3],[128.32,38.6],[128.55,38.2],[128.62,37.9],[129.05,37.25],[129.4,36.5],[129.45,35.8],[129.2,35.25],[128.75,34.98],[128.4,34.85],[128.0,34.9],[127.65,34.65],[127.3,34.72],[126.9,34.4],[126.5,34.35],[126.15,34.55],[126.2,34.9],[126.35,35.15],[126.5,35.55],[126.35,35.85],[126.65,36.05],[126.5,36.35],[126.15,36.7],[126.4,37],[126.6,37.3],[126.1,37.5]];
 const jeju=[[126.12,33.33],[126.28,33.48],[126.57,33.56],[126.9,33.51],[126.93,33.38],[126.63,33.23],[126.3,33.22]];
 const project=([lng,lat])=>[lng>129.5?332.4+(lng-129.5)*22:55+(lng-125.7)*73,36+(38.8-lat)*82];
@@ -114,27 +129,32 @@ const project=([lng,lat])=>[lng>129.5?332.4+(lng-129.5)*22:55+(lng-125.7)*73,36+
 const ulleung=[[355,137],[361,134],[368,138],[370,144],[365,151],[358,150],[354,144]];
 const dokdo=[[383,161],[389,160],[391,165],[387,168],[383,166]];
 const polygons=[...([mainland,jeju].map(poly=>poly.map(project))),ulleung,dokdo];
-const savedGrids=new Map();
-let zoom=1,center=[200,270];const ns='http://www.w3.org/2000/svg';
-function dot(x,y,r,color){const c=document.createElementNS(ns,'circle');for(const[k,v]of Object.entries({cx:x,cy:y,r,fill:color}))c.setAttribute(k,v);return c;}
+let zoom=1,center=[200,270],savedView='saved';const ns='http://www.w3.org/2000/svg';
+const inSavedView=p=>records.get(p.id)?.saved&&(savedView==='visited'?!!records.get(p.id)?.visited:!records.get(p.id)?.visited);
+function pixel(x,y,size,color){const c=document.createElementNS(ns,'rect');for(const[k,v]of Object.entries({x:x-size/2,y:y-size/2,width:size,height:size,fill:color}))c.setAttribute(k,v);return c;}
 function renderSaved(){
-  const svg=$('#saved-map');svg.replaceChildren();const w=400/zoom,h=540/zoom;svg.setAttribute('viewBox',`${center[0]-w/2} ${center[1]-h/2} ${w} ${h}`);
-  const saved=places.filter(p=>records.get(p.id)?.saved),visited=saved.filter(p=>records.get(p.id)?.visited);
-  $('#saved-total').textContent=saved.length;$('#visited-total').textContent=visited.length;
-  $('#saved-hint').textContent=saved.length?'색이 채워진 점을 누르면 공간을 볼 수 있어요. 확대하면 가까운 공간이 나뉩니다.':'마음에 드는 공간을 저장해보세요.';
-  const level=Math.floor(Math.log2(zoom)),step=8/2**level;
-  if(!savedGrids.has(level))savedGrids.set(level,makeDotGrid(polygons,step));
-  const cells=savedGrids.get(level);
-  const points=saved.filter(p=>p.lat!=null).map(p=>{const[x,y]=project([p.lng,p.lat]);return {...p,x,y};});
+  const svg=$('#saved-map');svg.replaceChildren();const w=400/zoom,h=540/zoom;svg.setAttribute('preserveAspectRatio','xMidYMid meet');svg.setAttribute('viewBox',`${center[0]-w/2} ${center[1]-h/2} ${w} ${h}`);
+  const allSaved=places.filter(p=>records.get(p.id)?.saved),visited=allSaved.filter(p=>records.get(p.id)?.visited),saved=allSaved.filter(inSavedView);
+  $('#saved-total').textContent=allSaved.length-visited.length;$('#visited-total').textContent=visited.length;
+  document.querySelectorAll('[data-saved-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.savedView===savedView)));
+  svg.setAttribute('aria-label','저장·방문한 공간의 대한민국 모자이크 지도');
+  $('#saved-hint').hidden=saved.length>0;
+  $('#saved-hint').textContent=saved.length?'':savedView==='visited'?'방문 사진을 등록하면 여기에 표시됩니다.':'아직 방문하지 않은 저장 공간이 없습니다.';
+  const bounds=svg.getBoundingClientRect(),scale=Math.min(bounds.width/w,bounds.height/h)||1;
+  // Fixed screen size: zoom reveals a finer geographic grid, not larger pixels.
+  const step=8/scale,cellSize=7/scale;
+  const viewport={left:center[0]-w/2-step*2,right:center[0]+w/2+step*2,top:center[1]-h/2-step*2,bottom:center[1]+h/2+step*2};
+  const cells=makeDotGrid(polygons,step,viewport);
+  const points=allSaved.filter(p=>p.lat!=null).map(p=>{const[x,y]=project([p.lng,p.lat]);return {...p,x,y};}).filter(p=>p.x>=viewport.left&&p.x<viewport.right&&p.y>=viewport.top&&p.y<viewport.bottom);
   const groups=assignToDots(points,cells);
   for(const cell of cells){
     if(Math.abs(cell.x-center[0])>w/2+step||Math.abs(cell.y-center[1])>h/2+step)continue;
     const items=groups.get(cell.key)||[];
     const colored=items.filter(p=>records.get(p.id)?.visited).sort((a,b)=>records.get(b.id).updatedAt-records.get(a.id).updatedAt);
-    const circle=dot(cell.x,cell.y,2.9/zoom,items.length?(colored[0]?.color||'#333'):'#d9d7d2');
+    const circle=pixel(cell.x,cell.y,cellSize,items.length?(colored[0]?placeCategory(colored[0]).color:savedColor):'#E8E8E5');
     circle.dataset.gridCell=cell.key;
     if(!items.length){svg.append(circle);continue;}
-    const group=document.createElementNS(ns,'g');group.setAttribute('role','button');group.setAttribute('tabindex','0');group.setAttribute('aria-label',items.map(p=>p.name).join(', '));group.append(dot(cell.x,cell.y,4/zoom,'transparent'),circle);
+    const group=document.createElementNS(ns,'g');group.setAttribute('role','button');group.setAttribute('tabindex','0');group.setAttribute('aria-label',items.map(p=>p.name).join(', '));group.append(pixel(cell.x,cell.y,step,'transparent'),circle);const title=document.createElementNS(ns,'title');title.textContent=items.map(p=>p.name+' · '+(records.get(p.id)?.visited?'방문 · '+placeCategory(p).label:'저장')).join(', ');group.append(title);
     const open=()=>openSavedPanel(items);group.onclick=open;group.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}};svg.append(group);
   }
   const list=$('#saved-list');list.replaceChildren();for(const p of saved){const b=btn(null,()=>showDetail(p),'saved-space');if(p.images[0])b.append(image(p.images[0],p.name));const t=el('div');t.append(el('strong',p.name),el('span',records.get(p.id).visited?'VISITED':'SAVED'));b.append(t);list.append(b);}
@@ -142,11 +162,15 @@ function renderSaved(){
 function openSavedPanel(items){const panel=$('#saved-panel');panel.hidden=false;panel.replaceChildren();const p=items[0];if(items.length>1){for(const item of items)panel.append(btn(item.name,()=>openSavedPanel([item]),'place-item'));panel.append(btn('닫기',()=>panel.hidden=true));return;}
   const photo=btn(null,()=>showDetail(p),'panel-photo');if(p.images[0])photo.append(image(p.images[0],p.name));const bottom=el('div',null,'panel-bottom');bottom.append(btn(p.name,()=>showDetail(p),'space-name'),discoveryButton(p),createSaveButton(p));panel.append(photo,btn('×',()=>panel.hidden=true,'panel-close'),bottom);
 }
-function setZoom(next){const old=zoom;zoom=Math.max(1,Math.min(14,next));if(zoom===1)center=[200,270];else if(old===1){const p=places.find(p=>records.get(p.id)?.saved&&p.lat!=null);center=p?project([p.lng,p.lat]):[190,180];}$('#saved-panel').hidden=true;renderSaved();}
+function setZoom(next){const old=zoom;zoom=Math.max(1,Math.min(16,next));if(zoom===1)center=[200,270];else if(old===1){const p=places.find(p=>records.get(p.id)?.saved&&p.lat!=null);center=p?project([p.lng,p.lat]):[190,180];}$('#saved-panel').hidden=true;renderSaved();}
 $('#saved-plus').onclick=()=>setZoom(zoom*1.8);$('#saved-minus').onclick=()=>setZoom(zoom/1.8);$('#saved-reset').onclick=()=>setZoom(1);
 $('#saved-map').addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.2:1/1.2));},{passive:false});
-let drag=null;$('#saved-map').onpointerdown=e=>{if(e.target.closest('[role=button]'))return;drag=[e.clientX,e.clientY,...center];$('#saved-map').setPointerCapture(e.pointerId);};
-$('#saved-map').onpointermove=e=>{if(!drag||zoom===1)return;const bounds=$('#saved-map').getBoundingClientRect();center=[Math.max(0,Math.min(400,drag[2]-(e.clientX-drag[0])*400/bounds.width/zoom)),Math.max(0,Math.min(540,drag[3]-(e.clientY-drag[1])*540/bounds.height/zoom))];renderSaved();};$('#saved-map').onpointerup=$('#saved-map').onpointercancel=()=>drag=null;
+bindSavedGestures($('#saved-map'),{getState:()=>({zoom,center:[...center]}),setState:state=>{zoom=state.zoom;center=state.center;renderSaved();},onStart:()=>$('#saved-panel').hidden=true});
+const legend=el('div',null,'saved-legend');legend.setAttribute('aria-label','모자이크 색상 안내');
+for(const c of categories){const item=el('span'),swatch=el('i');swatch.style.background=c.color;swatch.setAttribute('aria-hidden','true');item.append(swatch,document.createTextNode(c.label));legend.append(item);}
+const savedTabs=$('.saved-totals');savedTabs.setAttribute('role','group');savedTabs.setAttribute('aria-label','저장·방문 공간 선택');
+for(const [i,old]of [...savedTabs.children].entries()){const view=i?'visited':'saved',tab=btn(null,()=>{savedView=view;renderSaved();},'saved-view-button');tab.dataset.savedView=view;tab.setAttribute('aria-controls','saved-list');tab.append(...old.childNodes);if(!i)tab.querySelector('span').textContent='저장한 공간';old.replaceWith(tab);}
+$('#saved-map-wrap').append(legend);$('#saved-map-wrap').after(savedTabs);
 function info(title,text){$('#info-title').textContent=title;$('#info-content').replaceChildren(el('p',text));$('#info-dialog').showModal();}
 $('#about-open').onclick=()=>info('AGIO_srm','아지오의 취향으로 선정한 공간. 사진으로 발견하고, 지도로 찾아가고, 당신의 방문을 색으로 기록합니다.');
 $('#storage-info').onclick=()=>info('개인 기록 보관 안내','저장과 방문 사진은 이 브라우저의 기기 저장소에 보관됩니다. 다른 기기와 동기화되지 않으며, 브라우저 데이터를 지우면 기록도 삭제됩니다. 저장을 해제해도 방문 사진은 내 방문 사진에 남습니다. 다시 저장하면 무채색으로 시작하고 사진을 등록하면 공간의 색이 채워집니다. 마지막 방문 사진을 삭제하면 저장은 유지되고 무채색으로 돌아갑니다.');
@@ -177,7 +201,7 @@ async function openGallery(){
   await loadMore();
 }
 $('#my-photos').onclick=openGallery;
-function intro(){const splash=$('#splash');splash.hidden=false;splash.classList.remove('playing');void splash.offsetWidth;splash.classList.add('playing');clearTimeout(intro.timer);intro.timer=setTimeout(()=>splash.hidden=true,matchMedia('(prefers-reduced-motion: reduce)').matches?100:2400);}
+function intro(){playIntro($('#splash'));}
 intro();route();
 // Personal storage never holds up the official catalogue or map.
 const personalReady=(async()=>{try{records=new Map((await allRecords()).map(r=>[r.placeId,r]));storageReady=true;renderSaved();updateSaveButtons();if(currentDetail)renderDetail(currentDetail);await updatePhotoCount();}catch(e){toast(e.message);}})();
@@ -185,3 +209,4 @@ engine=await import('./app.mjs');
 await engine.ready;
 if(!places.length)$('#home-status').textContent='공간을 불러오지 못했거나 등록된 공간이 없습니다. 새로고침해 다시 확인해주세요.';
 renderSaved();
+
