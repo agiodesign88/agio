@@ -277,5 +277,28 @@
     ],
     "updatedAt": "2026-09-22T06:23:33.371Z",
     "id": "folder-96e2a9ab1e61a1f8e5db3b534c1f90b4ad6f82fc97118f3697183939d33ceb20"
+  },
+  {
+    "name": "025S TEA HOUSE",
+    "address": "서울특별시 성동구 왕십리로14길 20",
+    "lat": 37.5485612520423,
+    "lng": 127.045777013509,
+    "color": "#9dcfda",
+    "status": "draft",
+    "instagram": "@025s.official",
+    "hours": "12:00–19:00 (티룸 예약 12:00–17:30, 현장 입장 18:30까지)",
+    "category": "카페",
+    "order": 12,
+    "images": [
+      "/uploads/4802ae5a9fae956d854c2b9150da3ea8.jpg",
+      "/uploads/189c6434cddfec676d581b834b80a39b.jpg",
+      "/uploads/c09533d464c24cd72d318b9cbf985d94.jpg",
+      "/uploads/733a5dcd59be67cacb97c2ff1d9f07c6.jpg",
+      "/uploads/4d3ed477caabf7d2fda2a4529fa073da.jpg",
+      "/uploads/9158b6f872b9ae3a33fcd1b48307f0c9.jpg",
+      "/uploads/a4b063a94514fa29bab4df13abb64cbf.jpg"
+    ],
+    "updatedAt": "2026-09-23T01:39:13.529Z",
+    "id": "folder-1b357ce5d72b3c6c3b710257592650a4281a41e90a7dd4ed82b96e4feba061e3"
   }
 ]
